@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1013">
+<meta name="description" content="Player com equalizador e controle de conexão para a caixa Aiwa Boombox.">
+<title>Boombox TH</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+  :root {
+    --bg: #0e1013;
+    --panel: #171a1f;
+    --panel-2: #20242b;
+    --line: #2b3038;
+    --text: #eef0f3;
+    --muted: #9198a3;
+    --accent: #ff5a1f;
+    --accent-soft: rgba(255, 90, 31, .16);
+    --ok: #2fd17b;
+    --warn: #f5b93c;
+    --bad: #ff4d5e;
+    --radius: 18px;
+    --nav-h: 68px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    font-size: 16px;
+    overscroll-behavior: none;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  .app { max-width: 520px; margin: 0 auto; min-height: 100%; padding: 0 16px calc(var(--nav-h) + 24px + env(safe-area-inset-bottom)); }
+
+  /* Topo */
+  header { display: flex; align-items: center; justify-content: space-between; padding: calc(14px + env(safe-area-inset-top)) 0 10px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; letter-spacing: .2px; }
+  .brand img { width: 34px; height: 34px; border-radius: 9px; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .dot.ok { background: var(--ok); box-shadow: 0 0 10px var(--ok); }
+  .dot.warn { background: var(--warn); }
+  .dot.bad { background: var(--bad); }
+
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; margin-top: 14px; }
+  .card h2 { margin: 0 0 4px; font-size: 17px; }
+  .muted { color: var(--muted); font-size: 14px; line-height: 1.5; }
+  .row { display: flex; align-items: center; gap: 12px; }
+  .spacer { flex: 1; }
+
+  .btn { border: 0; border-radius: 14px; padding: 13px 18px; background: var(--panel-2); font-weight: 600; }
+  .btn.primary { background: var(--accent); color: #fff; }
+  .btn.ghost { background: transparent; border: 1px solid var(--line); }
+  .btn.block { width: 100%; }
+  .btn:active { transform: scale(.98); }
+  .btn:disabled { opacity: .5; }
+
+  section.tab { display: none; }
+  section.tab.active { display: block; }
+
+  /* Player */
+  .stage { position: relative; height: 190px; border-radius: var(--radius); overflow: hidden; background: radial-gradient(120% 90% at 50% 100%, #2a1a12 0%, var(--panel) 60%); border: 1px solid var(--line); margin-top: 6px; }
+  #viz { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .now { position: absolute; left: 16px; right: 16px; bottom: 14px; }
+  .now .title { font-size: 19px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .now .sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+  .seek { margin-top: 16px; }
+  .times { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .controls { display: flex; align-items: center; justify-content: center; gap: 22px; margin: 12px 0 4px; }
+  .ctrl { width: 56px; height: 56px; border-radius: 50%; border: 0; background: var(--panel-2); display: grid; place-items: center; }
+  .ctrl.play { width: 76px; height: 76px; background: var(--accent); box-shadow: 0 8px 24px rgba(255,90,31,.35); }
+  .ctrl svg { width: 26px; height: 26px; fill: currentColor; }
+  .ctrl.play svg { width: 34px; height: 34px; fill: #fff; }
+  .vol { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+  .vol svg { width: 22px; height: 22px; fill: var(--muted); flex: none; }
+
+  .list { list-style: none; margin: 10px 0 0; padding: 0; }
+  .list li { display: flex; align-items: center; gap: 12px; padding: 12px 10px; border-radius: 12px; }
+  .list li + li { border-top: 1px solid var(--line); }
+  .list li.playing { background: var(--accent-soft); }
+  .list li.playing .n { color: var(--accent); }
+  .list .n { width: 22px; text-align: center; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .list .name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .list .x { border: 0; background: transparent; color: var(--muted); font-size: 20px; padding: 0 6px; }
+  .empty { text-align: center; padding: 22px 8px 8px; }
+
+  /* Equalizador */
+  .switch { position: relative; width: 52px; height: 30px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch span { position: absolute; inset: 0; background: var(--panel-2); border: 1px solid var(--line); border-radius: 999px; transition: .2s; }
+  .switch span::after { content: ""; position: absolute; width: 22px; height: 22px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+  .switch input:checked + span { background: var(--accent); border-color: var(--accent); }
+  .switch input:checked + span::after { transform: translateX(22px); }
+
+  .presets { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 2px; scrollbar-width: none; }
+  .presets::-webkit-scrollbar { display: none; }
+  .chip { flex: none; border: 1px solid var(--line); background: var(--panel-2); border-radius: 999px; padding: 9px 15px; font-size: 14px; }
+  .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .bands { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 16px; }
+  .band { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .band .db { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; min-height: 15px; }
+  .band input[type=range] { writing-mode: vertical-lr; direction: rtl; width: 32px; height: 190px; margin: 0; }
+  .band label { font-size: 12px; color: var(--muted); }
+  .eq-off .bands, .eq-off .presets, .eq-off .extra { opacity: .4; pointer-events: none; }
+  .extra { margin-top: 18px; display: grid; gap: 14px; }
+  .extra .lbl { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px; }
+  .extra .lbl b { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  /* Conexão */
+  .device { display: flex; align-items: center; gap: 14px; }
+  .device .ico { width: 54px; height: 54px; border-radius: 16px; background: var(--panel-2); display: grid; place-items: center; flex: none; }
+  .device .ico svg { width: 30px; height: 30px; fill: var(--accent); }
+  .device .nm { font-weight: 700; font-size: 17px; }
+  .battery { display: none; margin-top: 14px; }
+  .battery .bar { height: 10px; border-radius: 99px; background: var(--panel-2); overflow: hidden; margin-top: 6px; }
+  .battery .bar i { display: block; height: 100%; background: var(--ok); width: 0; transition: width .4s; }
+  .steps { margin: 10px 0 0; padding-left: 20px; }
+  .steps li { margin: 8px 0; line-height: 1.45; font-size: 14px; color: #cfd3d9; }
+  .log { margin-top: 10px; font-size: 13px; color: var(--muted); min-height: 18px; }
+  .toggle-row { display: flex; align-items: center; gap: 12px; padding: 4px 0; }
+  .toggle-row + .toggle-row { border-top: 1px solid var(--line); padding-top: 14px; margin-top: 10px; }
+
+  /* Navegação inferior */
+  nav.bottom { position: fixed; left: 0; right: 0; bottom: 0; background: rgba(14,16,19,.94); backdrop-filter: blur(12px); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); z-index: 5; }
+  nav.bottom .in { max-width: 520px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); height: var(--nav-h); }
+  nav.bottom button { border: 0; background: transparent; color: var(--muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; }
+  nav.bottom button svg { width: 24px; height: 24px; fill: currentColor; }
+  nav.bottom button.active { color: var(--accent); }
+
+  .toast { position: fixed; left: 50%; bottom: calc(var(--nav-h) + 18px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(20px); background: #2a2f37; color: #fff; padding: 11px 16px; border-radius: 12px; font-size: 14px; opacity: 0; transition: .25s; pointer-events: none; max-width: calc(100% - 32px); z-index: 9; }
+  .toast.show { opacity: 1; transform: translateX(-50%); }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><img src="icons/icon.svg" alt="">Boombox</div>
+    <div class="pill" id="statusPill"><span class="dot" id="statusDot"></span><span id="statusText">Sem caixa</span></div>
+  </header>
+
+  <!-- PLAYER -->
+  <section class="tab active" id="tab-player">
+    <div class="stage">
+      <canvas id="viz"></canvas>
+      <div class="now">
+        <div class="title" id="trackTitle">Nenhuma música</div>
+        <div class="sub" id="trackSub">Adicione músicas do seu celular</div>
+      </div>
+    </div>
+
+    <div class="seek">
+      <input type="range" id="seek" min="0" max="1000" value="0" aria-label="Posição da música">
+      <div class="times"><span id="tCur">0:00</span><span id="tDur">0:00</span></div>
+    </div>
+
+    <div class="controls">
+      <button class="ctrl" id="btnPrev" aria-label="Anterior"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg></button>
+      <button class="ctrl play" id="btnPlay" aria-label="Tocar"><svg viewBox="0 0 24 24" id="playIcon"><path d="M8 5v14l11-7z"/></svg></button>
+      <button class="ctrl" id="btnNext" aria-label="Próxima"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+    </div>
+
+    <div class="vol">
+      <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4z"/></svg>
+      <input type="range" id="volume" min="0" max="100" value="90" aria-label="Volume">
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <h2>Minhas músicas</h2>
+        <div class="spacer"></div>
+        <button class="btn ghost" id="btnClear" style="padding:8px 12px;font-size:13px">Limpar</button>
+      </div>
+      <ul class="list" id="playlist"></ul>
+      <div class="empty muted" id="emptyList">Nenhuma música ainda. Toque em <b>Adicionar músicas</b> e escolha arquivos de áudio do celular (MP3, M4A, WAV…).</div>
+      <input type="file" id="filePick" accept="audio/*" multiple hidden>
+      <button class="btn primary block" id="btnAdd" style="margin-top:14px">+ Adicionar músicas</button>
+    </div>
+  </section>
+
+  <!-- EQUALIZADOR -->
+  <section class="tab" id="tab-eq">
+    <div class="card" id="eqCard">
+      <div class="row">
+        <div>
+          <h2>Equalizador</h2>
+          <div class="muted">Ajusta o som das músicas tocadas aqui no app</div>
+        </div>
+        <div class="spacer"></div>
+        <label class="switch"><input type="checkbox" id="eqOn" checked><span></span></label>
+      </div>
+
+      <div class="presets" id="presets" style="margin-top:16px"></div>
+      <div class="bands" id="bands"></div>
+
+      <div class="extra">
+        <div>
+          <div class="lbl"><span>Reforço de grave</span><b id="bassVal">0 dB</b></div>
+          <input type="range" id="bass" min="0" max="12" step="1" value="0">
+        </div>
+        <div>
+          <div class="lbl"><span>Proteção contra distorção</span><label class="switch"><input type="checkbox" id="limiter" checked><span></span></label></div>
+          <div class="muted">Evita que o som estoure quando o grave e o volume estão altos.</div>
+        </div>
+      </div>
+    </div>
+    <div class="card muted">
+      O equalizador vale para as músicas que você toca <b>dentro deste app</b>. O Android não deixa um app mudar o som de outros apps, como o Spotify ou o YouTube.
+    </div>
+  </section>
+
+  <!-- CONEXÃO -->
+  <section class="tab" id="tab-conn">
+    <div class="card">
+      <div class="device">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M17.7 7.7 12 2h-1v7.6L6.4 5 5 6.4l5.6 5.6L5 17.6 6.4 19l4.6-4.6V22h1l5.7-5.7-4.3-4.3 4.3-4.3zM13 5.8l1.9 1.9L13 9.6V5.8zm1.9 10.5L13 18.2v-3.8l1.9 1.9z"/></svg></div>
+        <div>
+          <div class="nm" id="devName">Nenhuma caixa conectada</div>
+          <div class="muted" id="devState">Toque em Conectar para procurar sua Aiwa</div>
+        </div>
+      </div>
+      <div class="battery" id="battery">
+        <div class="row"><span class="muted">Bateria da caixa</span><div class="spacer"></div><b id="batVal">–</b></div>
+        <div class="bar"><i id="batBar"></i></div>
+      </div>
+      <div class="row" style="margin-top:16px;gap:10px">
+        <button class="btn primary" id="btnConnect" style="flex:1">Conectar</button>
+        <button class="btn ghost hidden" id="btnDisconnect">Desconectar</button>
+      </div>
+      <div class="log" id="connLog"></div>
+      <div class="muted hidden" id="noBt" style="margin-top:8px">Este navegador não tem acesso ao Bluetooth. Abra o app no <b>Chrome</b> do Android.</div>
+    </div>
+
+    <div class="card">
+      <div class="toggle-row">
+        <div><b>Reconectar sozinho</b><div class="muted">Tenta voltar a conectar se a caixa cair</div></div>
+        <div class="spacer"></div>
+        <label class="switch"><input type="checkbox" id="autoRe" checked><span></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><b>Manter tela ligada</b><div class="muted">Ajuda a música não parar enquanto o app está aberto</div></div>
+        <div class="spacer"></div>
+        <label class="switch"><input type="checkbox" id="wake"><span></span></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Som cortando ou caindo?</h2>
+      <ol class="steps">
+        <li>Deixe o celular a até <b>5 metros</b> da caixa, sem paredes no meio.</li>
+        <li>No Android, vá em <b>Configurações › Bluetooth</b>, toque na engrenagem da Aiwa e escolha <b>Esquecer</b>. Depois pareie de novo.</li>
+        <li>Desconecte outros aparelhos Bluetooth (relógio, fone) enquanto usa a caixa.</li>
+        <li>Em <b>Configurações › Apps › Chrome › Bateria</b>, escolha <b>Sem restrições</b> para a música não parar com a tela apagada.</li>
+        <li>Se a caixa estiver com bateria fraca, ligue na tomada: a conexão fica mais estável.</li>
+      </ol>
+      <p class="muted" style="margin-bottom:0">Se sua caixa não aparecer na busca deste app, tudo bem: ela só usa o Bluetooth comum. Pareie pelas configurações do Android e o som toca normalmente.</p>
+    </div>
+  </section>
+</div>
+
+<nav class="bottom">
+  <div class="in">
+    <button class="active" data-tab="player"><svg viewBox="0 0 24 24"><path d="M12 3v10.6A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>Player</button>
+    <button data-tab="eq"><svg viewBox="0 0 24 24"><path d="M10 20h4V4h-4v16zm-6 0h4v-8H4v8zM16 9v11h4V9h-4z"/></svg>Equalizador</button>
+    <button data-tab="conn"><svg viewBox="0 0 24 24"><path d="M17.7 7.7 12 2h-1v7.6L6.4 5 5 6.4l5.6 5.6L5 17.6 6.4 19l4.6-4.6V22h1l5.7-5.7-4.3-4.3 4.3-4.3zM13 5.8l1.9 1.9L13 9.6V5.8zm1.9 10.5L13 18.2v-3.8l1.9 1.9z"/></svg>Conexão</button>
+  </div>
+</nav>
+<div class="toast" id="toast"></div>
+<audio id="audio" preload="metadata"></audio>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('bb.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem('bb.' + k, JSON.stringify(v)); } catch {} }
+  };
+  let toastTimer;
+  function toast(msg) {
+    const t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+  }
+
+  /* ---------- Abas ---------- */
+  document.querySelectorAll('nav.bottom button').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('nav.bottom button').forEach(x => x.classList.toggle('active', x === b));
+    document.querySelectorAll('section.tab').forEach(s => s.classList.toggle('active', s.id === 'tab-' + b.dataset.tab));
+    window.scrollTo(0, 0);
+  }));
+
+  /* ---------- Áudio + Equalizador ---------- */
+  const audio = $('audio');
+  const BANDS = [
+    { f: 60, label: '60', type: 'lowshelf' },
+    { f: 150, label: '150', type: 'peaking' },
+    { f: 400, label: '400', type: 'peaking' },
+    { f: 1000, label: '1k', type: 'peaking' },
+    { f: 2400, label: '2.4k', type: 'peaking' },
+    { f: 6000, label: '6k', type: 'peaking' },
+    { f: 15000, label: '15k', type: 'highshelf' }
+  ];
+  const PRESETS = {
+    'Normal':      [0, 0, 0, 0, 0, 0, 0],
+    'Grave forte': [8, 6, 2, 0, 0, 0, 1],
+    'Funk':        [8, 6, 1, -1, 0, 2, 3],
+    'Festa':       [6, 4, 0, -1, 1, 3, 4],
+    'Rock':        [4, 2, -1, -2, 1, 3, 4],
+    'Pop':         [-1, 1, 3, 3, 1, -1, -1],
+    'Sertanejo':   [3, 2, 0, 1, 2, 2, 1],
+    'Voz':         [-3, -1, 1, 3, 4, 2, 0],
+    'Agudo':       [0, 0, 0, 1, 3, 5, 6]
+  };
+
+  let eqGains = store.get('eq', PRESETS['Normal'].slice());
+  let preset = store.get('preset', 'Normal');
+  let eqOn = store.get('eqOn', true);
+  let bassBoost = store.get('bass', 0);
+  let limiterOn = store.get('limiter', true);
+  let volume = store.get('vol', 90);
+
+  let ctx, filters = [], bassNode, preGain, volGain, limiter, analyser, sourceNode;
+
+  function buildGraph() {
+    if (ctx) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    ctx = new AC({ latencyHint: 'playback' });
+    sourceNode = ctx.createMediaElementSource(audio);
+    filters = BANDS.map(b => {
+      const n = ctx.createBiquadFilter();
+      n.type = b.type; n.frequency.value = b.f; n.Q.value = 1.1;
+      return n;
+    });
+    bassNode = ctx.createBiquadFilter();
+    bassNode.type = 'lowshelf'; bassNode.frequency.value = 90;
+    preGain = ctx.createGain();     // baixa o sinal quando há reforço, para não distorcer
+    volGain = ctx.createGain();
+    limiter = ctx.createDynamicsCompressor();
+    limiter.threshold.value = -3; limiter.knee.value = 4; limiter.ratio.value = 20;
+    limiter.attack.value = 0.003; limiter.release.value = 0.15;
+    analyser = ctx.createAnalyser(); analyser.fftSize = 256; analyser.smoothingTimeConstant = 0.8;
+
+    let node = sourceNode;
+    [...filters, bassNode, preGain, volGain].forEach(n => { node.connect(n); node = n; });
+    routeOutput();
+    applyEq(); applyVolume();
+  }
+
+  function routeOutput() {
+    if (!ctx) return;
+    try { limiter.disconnect(); } catch {}
+    try { volGain.disconnect(); } catch {}
+    if (limiterOn) { volGain.connect(limiter); limiter.connect(analyser); }
+    else volGain.connect(analyser);
+    analyser.connect(ctx.destination);
+  }
+
+  function applyEq() {
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    filters.forEach((n, i) => n.gain.setTargetAtTime(eqOn ? eqGains[i] : 0, t, 0.03));
+    bassNode.gain.setTargetAtTime(eqOn ? bassBoost : 0, t, 0.03);
+    const peak = eqOn ? Math.max(0, ...eqGains, bassBoost + Math.max(0, eqGains[0])) : 0;
+    preGain.gain.setTargetAtTime(Math.pow(10, -peak * 0.5 / 20), t, 0.05);
+  }
+  function applyVolume() {
+    if (ctx) volGain.gain.setTargetAtTime(Math.pow(volume / 100, 2), ctx.currentTime, 0.03);
+    else audio.volume = volume / 100;
+  }
+
+  // Monta a tela do equalizador
+  const bandsEl = $('bands');
+  BANDS.forEach((b, i) => {
+    const d = document.createElement('div');
+    d.className = 'band';
+    d.innerHTML = `<span class="db" id="db${i}"></span>
+      <input type="range" min="-12" max="12" step="1" value="${eqGains[i]}" aria-label="${b.label} Hz" data-i="${i}">
+      <label>${b.label}</label>`;
+    bandsEl.appendChild(d);
+  });
+  function fmtDb(v) { return (v > 0 ? '+' : '') + v; }
+  function renderEq() {
+    bandsEl.querySelectorAll('input').forEach((inp, i) => { inp.value = eqGains[i]; $('db' + i).textContent = fmtDb(eqGains[i]); });
+    document.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c.dataset.p === preset));
+    $('eqCard').classList.toggle('eq-off', !eqOn);
+    $('eqOn').checked = eqOn;
+    $('bass').value = bassBoost; $('bassVal').textContent = (bassBoost ? '+' : '') + bassBoost + ' dB';
+    $('limiter').checked = limiterOn;
+    const custom = document.querySelector('[data-p="Personalizado"]');
+    if (custom) custom.classList.toggle('hidden', preset !== 'Personalizado');
+  }
+  bandsEl.addEventListener('input', e => {
+    const i = +e.target.dataset.i; if (isNaN(i)) return;
+    eqGains[i] = +e.target.value;
+    preset = Object.keys(PRESETS).find(k => PRESETS[k].every((v, j) => v === eqGains[j])) || 'Personalizado';
+    store.set('eq', eqGains); store.set('preset', preset);
+    renderEq(); applyEq();
+  });
+  const presetsEl = $('presets');
+  [...Object.keys(PRESETS), 'Personalizado'].forEach(name => {
+    const c = document.createElement('button');
+    c.className = 'chip'; c.textContent = name; c.dataset.p = name;
+    if (name === 'Personalizado') c.classList.add('hidden');
+    c.addEventListener('click', () => {
+      if (!PRESETS[name]) return;
+      preset = name; eqGains = PRESETS[name].slice();
+      store.set('eq', eqGains); store.set('preset', preset);
+      renderEq(); applyEq();
+    });
+    presetsEl.appendChild(c);
+  });
+  $('eqOn').addEventListener('change', e => { eqOn = e.target.checked; store.set('eqOn', eqOn); renderEq(); applyEq(); });
+  $('bass').addEventListener('input', e => { bassBoost = +e.target.value; store.set('bass', bassBoost); renderEq(); applyEq(); });
+  $('limiter').addEventListener('change', e => { limiterOn = e.target.checked; store.set('limiter', limiterOn); routeOutput(); });
+  $('volume').value = volume;
+  $('volume').addEventListener('input', e => { volume = +e.target.value; store.set('vol', volume); applyVolume(); });
+  renderEq(); applyVolume();
+
+  /* ---------- Lista de músicas (salva no celular) ---------- */
+  let db;
+  const dbReady = new Promise(res => {
+    try {
+      const r = indexedDB.open('boombox', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('tracks', { keyPath: 'id', autoIncrement: true });
+      r.onsuccess = () => { db = r.result; res(); };
+      r.onerror = () => res();
+    } catch { res(); }
+  });
+  function tx(mode) { return db.transaction('tracks', mode).objectStore('tracks'); }
+  function dbAll() { return new Promise(res => { if (!db) return res([]); const r = tx('readonly').getAll(); r.onsuccess = () => res(r.result); r.onerror = () => res([]); }); }
+  function dbAdd(t) { return new Promise(res => { if (!db) return res(null); const r = tx('readwrite').add(t); r.onsuccess = () => res(r.result); r.onerror = () => res(null); }); }
+  function dbDel(id) { if (db && id != null) try { tx('readwrite').delete(id); } catch {} }
+  function dbClear() { if (db) try { tx('readwrite').clear(); } catch {} }
+
+  let tracks = [];   // { id, name, blob, url }
+  let cur = -1;
+
+  function cleanName(n) { return n.replace(/\.[^.]+$/, '').replace(/[_]+/g, ' ').trim(); }
+  function renderList() {
+    const ul = $('playlist'); ul.innerHTML = '';
+    tracks.forEach((t, i) => {
+      const li = document.createElement('li');
+      if (i === cur) li.className = 'playing';
+      li.innerHTML = `<span class="n">${i === cur && !audio.paused ? '♪' : i + 1}</span><span class="name"></span><button class="x" aria-label="Remover">×</button>`;
+      li.querySelector('.name').textContent = t.name;
+      li.addEventListener('click', e => { if (e.target.classList.contains('x')) return; play(i); });
+      li.querySelector('.x').addEventListener('click', () => removeTrack(i));
+      ul.appendChild(li);
+    });
+    $('emptyList').classList.toggle('hidden', tracks.length > 0);
+    $('btnClear').classList.toggle('hidden', tracks.length === 0);
+  }
+  function removeTrack(i) {
+    const t = tracks[i];
+    dbDel(t.id); if (t.url) URL.revokeObjectURL(t.url);
+    tracks.splice(i, 1);
+    if (i === cur) { audio.pause(); audio.removeAttribute('src'); cur = -1; showNow(); }
+    else if (i < cur) cur--;
+    renderList();
+  }
+
+  $('btnAdd').addEventListener('click', () => $('filePick').click());
+  $('filePick').addEventListener('change', async e => {
+    const files = [...e.target.files]; e.target.value = '';
+    await dbReady;
+    for (const f of files) {
+      const t = { name: cleanName(f.name), blob: f };
+      t.id = await dbAdd({ name: t.name, blob: f });
+      tracks.push(t);
+    }
+    renderList();
+    toast(files.length === 1 ? 'Música adicionada' : files.length + ' músicas adicionadas');
+    if (cur === -1 && tracks.length) load(0);
+  });
+  $('btnClear').addEventListener('click', () => {
+    if (!confirm('Remover todas as músicas da lista?')) return;
+    audio.pause(); audio.removeAttribute('src');
+    tracks.forEach(t => t.url && URL.revokeObjectURL(t.url));
+    tracks = []; cur = -1; dbClear(); renderList(); showNow();
+  });
+
+  dbReady.then(dbAll).then(saved => {
+    tracks = saved.map(s => ({ id: s.id, name: s.name, blob: s.blob }));
+    renderList();
+    if (tracks.length) load(Math.min(store.get('cur', 0), tracks.length - 1));
+  });
+
+  /* ---------- Player ---------- */
+  function showNow() {
+    const t = tracks[cur];
+    $('trackTitle').textContent = t ? t.name : 'Nenhuma música';
+    $('trackSub').textContent = t ? `Faixa ${cur + 1} de ${tracks.length}` : 'Adicione músicas do seu celular';
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = t ? new MediaMetadata({
+        title: t.name, artist: 'Boombox', artwork: [{ src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' }]
+      }) : null;
+    }
+  }
+  function load(i) {
+    if (!tracks[i]) return;
+    cur = i; store.set('cur', i);
+    const t = tracks[i];
+    if (!t.url) t.url = URL.createObjectURL(t.blob);
+    audio.src = t.url;
+    showNow(); renderList();
+  }
+  async function play(i) {
+    buildGraph();
+    if (ctx && ctx.state === 'suspended') await ctx.resume();
+    if (i !== undefined && i !== cur) load(i);
+    if (cur === -1) { if (!tracks.length) { toast('Adicione músicas primeiro'); return; } load(0); }
+    try { await audio.play(); } catch (err) { toast('Não foi possível tocar este arquivo'); }
+  }
+  function next() { if (tracks.length) play((cur + 1) % tracks.length); }
+  function prev() {
+    if (!tracks.length) return;
+    if (audio.currentTime > 3) { audio.currentTime = 0; return; }
+    play((cur - 1 + tracks.length) % tracks.length);
+  }
+  $('btnPlay').addEventListener('click', () => audio.paused ? play() : audio.pause());
+  $('btnNext').addEventListener('click', next);
+  $('btnPrev').addEventListener('click', prev);
+  audio.addEventListener('ended', next);
+  audio.addEventListener('error', () => { if (audio.getAttribute('src')) toast('Formato de arquivo não suportado'); });
+
+  const PLAY = '<path d="M8 5v14l11-7z"/>', PAUSE = '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
+  function syncPlayState() {
+    $('playIcon').innerHTML = audio.paused ? PLAY : PAUSE;
+    $('btnPlay').setAttribute('aria-label', audio.paused ? 'Tocar' : 'Pausar');
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = audio.paused ? 'paused' : 'playing';
+    renderList();
+  }
+  audio.addEventListener('play', syncPlayState);
+  audio.addEventListener('pause', syncPlayState);
+
+  function fmt(s) { if (!isFinite(s)) return '0:00'; s = Math.floor(s); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+  let seeking = false;
+  audio.addEventListener('timeupdate', () => {
+    if (!seeking && audio.duration) $('seek').value = audio.currentTime / audio.duration * 1000;
+    $('tCur').textContent = fmt(audio.currentTime);
+    if ('mediaSession' in navigator && audio.duration && navigator.mediaSession.setPositionState) {
+      try { navigator.mediaSession.setPositionState({ duration: audio.duration, position: audio.currentTime, playbackRate: 1 }); } catch {}
+    }
+  });
+  audio.addEventListener('loadedmetadata', () => { $('tDur').textContent = fmt(audio.duration); });
+  $('seek').addEventListener('input', () => { seeking = true; if (audio.duration) $('tCur').textContent = fmt($('seek').value / 1000 * audio.duration); });
+  $('seek').addEventListener('change', () => { if (audio.duration) audio.currentTime = $('seek').value / 1000 * audio.duration; seeking = false; });
+
+  // Controles na tela de bloqueio e nos botões da caixa (play/pause/próxima)
+  if ('mediaSession' in navigator) {
+    const ms = navigator.mediaSession;
+    const set = (a, f) => { try { ms.setActionHandler(a, f); } catch {} };
+    set('play', () => play());
+    set('pause', () => audio.pause());
+    set('nexttrack', next);
+    set('previoustrack', prev);
+    set('seekto', d => { if (d.seekTime != null) audio.currentTime = d.seekTime; });
+  }
+
+  /* ---------- Visualizador ---------- */
+  const cv = $('viz'), g = cv.getContext('2d');
+  function sizeCanvas() { const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1; cv.width = r.width * dpr; cv.height = r.height * dpr; }
+  sizeCanvas(); window.addEventListener('resize', sizeCanvas);
+  let freq;
+  function draw() {
+    requestAnimationFrame(draw);
+    if (document.hidden) return;
+    const W = cv.width, H = cv.height, N = 40;
+    g.clearRect(0, 0, W, H);
+    if (analyser) { freq = freq || new Uint8Array(analyser.frequencyBinCount); analyser.getByteFrequencyData(freq); }
+    const bw = W / N;
+    for (let i = 0; i < N; i++) {
+      let v = 0;
+      if (freq && !audio.paused) v = freq[Math.floor(Math.pow(i / N, 1.6) * (freq.length * 0.85))] / 255;
+      const h = Math.max(4 * (window.devicePixelRatio || 1), v * H * 0.62);
+      g.fillStyle = `rgba(255, ${90 + v * 90}, 31, ${0.25 + v * 0.75})`;
+      const x = i * bw + bw * 0.18, w = bw * 0.64;
+      g.beginPath();
+      g.roundRect ? g.roundRect(x, H * 0.66 - h, w, h, w / 2) : g.rect(x, H * 0.66 - h, w, h);
+      g.fill();
+    }
+  }
+  draw();
+
+  /* ---------- Conexão Bluetooth ---------- */
+  let device = null, wantConnected = false, retry = 0, retryTimer;
+  const hasBt = 'bluetooth' in navigator;
+  if (!hasBt) { $('noBt').classList.remove('hidden'); $('btnConnect').disabled = true; }
+
+  function setStatus(state, name) {
+    const dot = $('statusDot');
+    dot.className = 'dot' + (state === 'ok' ? ' ok' : state === 'wait' ? ' warn' : state === 'lost' ? ' bad' : '');
+    const label = { ok: name || 'Conectada', wait: 'Conectando…', lost: 'Conexão caiu', off: 'Sem caixa' }[state];
+    $('statusText').textContent = label;
+    $('devName').textContent = device ? (device.name || 'Caixa Bluetooth') : 'Nenhuma caixa conectada';
+    $('devState').textContent = {
+      ok: 'Conectada e pronta', wait: 'Conectando…', lost: 'Conexão perdida', off: device ? 'Desconectada' : 'Toque em Conectar para procurar sua Aiwa'
+    }[state];
+    $('btnConnect').classList.toggle('hidden', state === 'ok' || state === 'wait');
+    $('btnConnect').textContent = device ? 'Conectar de novo' : 'Conectar';
+    $('btnDisconnect').classList.toggle('hidden', !(state === 'ok' || state === 'wait'));
+  }
+  const log = m => { $('connLog').textContent = m || ''; };
+
+  async function readBattery(server) {
+    try {
+      const svc = await server.getPrimaryService('battery_service');
+      const ch = await svc.getCharacteristic('battery_level');
+      const show = v => { $('battery').style.display = 'block'; $('batVal').textContent = v + '%'; $('batBar').style.width = v + '%'; $('batBar').style.background = v <= 20 ? 'var(--bad)' : v <= 40 ? 'var(--warn)' : 'var(--ok)'; };
+      show((await ch.readValue()).getUint8(0));
+      try { await ch.startNotifications(); ch.addEventListener('characteristicvaluechanged', e => show(e.target.value.getUint8(0))); } catch {}
+    } catch { $('battery').style.display = 'none'; }
+  }
+
+  async function connectGatt() {
+    if (!device) return;
+    clearTimeout(retryTimer);
+    setStatus('wait'); log('');
+    try {
+      const server = await device.gatt.connect();
+      retry = 0;
+      setStatus('ok', device.name);
+      log('');
+      store.set('lastDevice', device.name || '');
+      readBattery(server);
+    } catch (err) {
+      scheduleRetry(err);
+    }
+  }
+  function scheduleRetry(err) {
+    if (!wantConnected || !$('autoRe').checked || retry >= 6) {
+      setStatus('off');
+      log(retry >= 6 ? 'Não conseguiu reconectar. Veja se a caixa está ligada e perto.' : (err ? 'Não conectou: ' + (err.message || err) : ''));
+      return;
+    }
+    const wait = Math.min(30, 2 ** retry) * 1000;   // 1s, 2s, 4s, 8s…
+    retry++;
+    setStatus('lost');
+    log(`Tentando de novo em ${wait / 1000}s (tentativa ${retry} de 6)…`);
+    retryTimer = setTimeout(connectGatt, wait);
+  }
+  function onDisconnected() {
+    $('battery').style.display = 'none';
+    if (wantConnected) { toast('A caixa desconectou'); scheduleRetry(); }
+    else setStatus('off');
+  }
+  function useDevice(d) {
+    if (device && device !== d) device.removeEventListener('gattserverdisconnected', onDisconnected);
+    device = d;
+    device.addEventListener('gattserverdisconnected', onDisconnected);
+  }
+
+  $('btnConnect').addEventListener('click', async () => {
+    if (!hasBt) return;
+    try {
+      if (!device) {
+        const d = await navigator.bluetooth.requestDevice({
+          acceptAllDevices: true,
+          optionalServices: ['battery_service', 'device_information']
+        });
+        useDevice(d);
+      }
+      wantConnected = true; retry = 0;
+      await connectGatt();
+    } catch (err) {
+      if (err && err.name === 'NotFoundError') log('Nenhuma caixa escolhida. Se a Aiwa não apareceu na lista, pareie pelo Bluetooth do Android: o som funciona do mesmo jeito.');
+      else log('Erro: ' + (err.message || err));
+    }
+  });
+  $('btnDisconnect').addEventListener('click', () => {
+    wantConnected = false; clearTimeout(retryTimer);
+    if (device && device.gatt.connected) device.gatt.disconnect();
+    setStatus('off'); log('');
+  });
+  $('autoRe').checked = store.get('autoRe', true);
+  $('autoRe').addEventListener('change', e => store.set('autoRe', e.target.checked));
+
+  // Lembra a caixa usada antes (quando o Chrome permite)
+  if (hasBt && navigator.bluetooth.getDevices) {
+    navigator.bluetooth.getDevices().then(list => {
+      const last = store.get('lastDevice', null);
+      const d = list.find(x => x.name === last) || list[0];
+      if (d) { useDevice(d); setStatus('off'); }
+    }).catch(() => {});
+  }
+  setStatus('off');
+
+  /* ---------- Manter tela ligada ---------- */
+  let lock = null;
+  async function setWake(on) {
+    try {
+      if (on && 'wakeLock' in navigator) { lock = await navigator.wakeLock.request('screen'); }
+      else if (lock) { await lock.release(); lock = null; }
+    } catch { if (on) toast('Seu celular não permitiu manter a tela ligada'); }
+  }
+  $('wake').checked = store.get('wake', false);
+  $('wake').addEventListener('change', e => { store.set('wake', e.target.checked); setWake(e.target.checked); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && $('wake').checked) setWake(true); });
+  if ($('wake').checked) setWake(true);
+
+  /* ---------- Instalação / offline ---------- */
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+</script>
+</body>
+</html>
