@@ -295,7 +295,7 @@
       <div class="muted">Toca por cima da música, direto na caixa</div>
       <div class="vpads"></div>
       <div class="lbl"><span>Volume das vinhetas</span><b class="vvolTxt">100%</b></div>
-      <input type="range" class="vvol" min="0" max="150" value="100" aria-label="Volume das vinhetas">
+      <input type="range" class="vvol" min="0" max="300" value="200" aria-label="Volume das vinhetas">
     </div>
   </section>
 
@@ -375,7 +375,7 @@
       <div class="muted">Toca por cima da música, direto na caixa</div>
       <div class="vpads"></div>
       <div class="lbl"><span>Volume das vinhetas</span><b class="vvolTxt">100%</b></div>
-      <input type="range" class="vvol" min="0" max="150" value="100" aria-label="Volume das vinhetas">
+      <input type="range" class="vvol" min="0" max="300" value="200" aria-label="Volume das vinhetas">
     </div>
 
     <div class="card">
@@ -415,7 +415,7 @@
 <audio id="audio" preload="metadata"></audio>
 
 <script>
-const APP_VERSION = '5';
+const APP_VERSION = '6';
 window.__errs = [];
 window.addEventListener('error', e => window.__errs.push(e.message));
 (() => {
@@ -945,15 +945,19 @@ window.addEventListener('error', e => window.__errs.push(e.message));
     { f: 'e-o-dj-dos-guri', n: 'É o DJ dos guri' }, { f: 'vamo-animar-gurizada', n: 'Vamo animar gurizada' },
     { f: 'vamo-dale-no-grau', n: 'Vamo dale no grau' }, { f: 'ja-virou-rave', n: 'Já virou rave o bagulho' },
     { f: 'a-galera-nao-ta-entendendo', n: 'A galera não tá entendendo nada' }, { f: 'agora-me-ferrei', n: 'Agora me ferrei' },
-    { f: 'fudeu-ne-guri', n: 'Fudeu né guri, meu Deus' }, { f: 'fodeback', n: 'Fodeback' }
+    { f: 'fodeback', n: 'Fodeback' }
   ];
-  let vCtx, vGain, vCur = null, vVol = store.get('vvol', 100);
+  let vCtx, vGain, vCur = null, vVol = store.get('vvol2', 200);
   const vRaw = {}, vBuf = {};
   VINHETAS.forEach(v => { vRaw[v.f] = fetch('sons/' + v.f + '.mp3').then(r => r.arrayBuffer()).catch(() => null); });  // baixa antes
   function vContext() {
     if (!vCtx) {
       vCtx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
-      vGain = vCtx.createGain(); vGain.gain.value = vVol / 100; vGain.connect(vCtx.destination);
+      // Ganho alto + limitador: dá para passar de 100% sem estourar o som
+      vGain = vCtx.createGain(); vGain.gain.value = vVol / 100;
+      const lim = vCtx.createDynamicsCompressor();
+      lim.threshold.value = -2; lim.knee.value = 2; lim.ratio.value = 20; lim.attack.value = 0.002; lim.release.value = 0.1;
+      vGain.connect(lim); lim.connect(vCtx.destination);
     }
     return vCtx;
   }
@@ -988,7 +992,7 @@ window.addEventListener('error', e => window.__errs.push(e.message));
   document.querySelectorAll('.vvol').forEach(inp => {
     inp.value = vVol;
     inp.addEventListener('input', e => {
-      vVol = +e.target.value; store.set('vvol', vVol);
+      vVol = +e.target.value; store.set('vvol2', vVol);
       if (vGain) vGain.gain.value = vVol / 100;
       document.querySelectorAll('.vvol').forEach(o => { if (o !== e.target) o.value = vVol; });
       document.querySelectorAll('.vvolTxt').forEach(t => t.textContent = vVol + '%');
@@ -1059,9 +1063,9 @@ window.addEventListener('error', e => window.__errs.push(e.message));
   let ducked = false;
   function duckMusic(on) {
     ducked = on;
-    if (ctx) volGain.gain.setTargetAtTime(Math.pow(volume / 100, 2) * (on ? 0.35 : 1), ctx.currentTime, on ? 0.05 : 0.3);
+    if (ctx) volGain.gain.setTargetAtTime(Math.pow(volume / 100, 2) * (on ? 0.2 : 1), ctx.currentTime, on ? 0.05 : 0.3);
   }
-  function applyVolume() { if (ctx) volGain.gain.setTargetAtTime(Math.pow(volume / 100, 2) * (ducked ? 0.35 : 1), ctx.currentTime, 0.03); else audio.volume = volume / 100; }
+  function applyVolume() { if (ctx) volGain.gain.setTargetAtTime(Math.pow(volume / 100, 2) * (ducked ? 0.2 : 1), ctx.currentTime, 0.03); else audio.volume = volume / 100; }
 
   const bandsEl = $('bands');
   bandsEl.innerHTML = BANDS.map((b, i) => `<div class="band"><span class="db" id="db${i}"></span>
