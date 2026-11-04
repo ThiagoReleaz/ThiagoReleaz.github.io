@@ -295,7 +295,7 @@
       <div class="muted">Toca por cima da música, direto na caixa</div>
       <div class="vpads"></div>
       <div class="lbl"><span>Volume das vinhetas</span><b class="vvolTxt">100%</b></div>
-      <input type="range" class="vvol" min="0" max="150" value="100" aria-label="Volume das vinhetas">
+      <input type="range" class="vvol" min="0" max="300" value="200" aria-label="Volume das vinhetas">
     </div>
   </section>
 
@@ -375,7 +375,7 @@
       <div class="muted">Toca por cima da música, direto na caixa</div>
       <div class="vpads"></div>
       <div class="lbl"><span>Volume das vinhetas</span><b class="vvolTxt">100%</b></div>
-      <input type="range" class="vvol" min="0" max="150" value="100" aria-label="Volume das vinhetas">
+      <input type="range" class="vvol" min="0" max="300" value="200" aria-label="Volume das vinhetas">
     </div>
 
     <div class="card">
@@ -415,7 +415,7 @@
 <audio id="audio" preload="metadata"></audio>
 
 <script>
-const APP_VERSION = '4';
+const APP_VERSION = '6';
 window.__errs = [];
 window.addEventListener('error', e => window.__errs.push(e.message));
 (() => {
@@ -454,14 +454,16 @@ window.addEventListener('error', e => window.__errs.push(e.message));
     { name: 'Verde', rgb: '0,255,0' }, { name: 'Amarelo', rgb: '255,255,0' }, { name: 'Vermelho', rgb: '255,0,0' },
     { name: 'Roxo', rgb: '156,0,255' }, { name: 'Azul', rgb: '0,0,255' }
   ];
-  const SPK_PRESETS = [   // valores mostrados nas barras (-9 a +9), iguais aos do app oficial
-    { name: 'AIWA', v: 0, levels: [0, 0, 0, 0, 0] },
-    { name: 'Rock', v: 1, levels: [-2, 0, -3, 1, 2] },
-    { name: 'Pop', v: 2, levels: [-4, 2, 0, 2, 3] },
-    { name: 'Intenso', v: 3, levels: [-6, 0, 0, 1, 4] },
-    { name: 'Clássico', v: 4, levels: [-4, -2, 0, 0, 5] },
-    { name: 'Jazz', v: 5, levels: [0, -4, -2, 2, 6] },
-    { name: 'Personalizado', v: 6, levels: null }
+  // Níveis de cada modo (-9 a +9), convertidos das posições usadas pelo app oficial.
+  // l3 = caixas de 3 faixas (Grave, Médio, Agudo); l5 = caixas de 5 faixas.
+  const SPK_PRESETS = [
+    { name: 'AIWA', v: 0, l3: [0, 0, 0], l5: [0, 0, 0, 0, 0] },
+    { name: 'Rock', v: 1, l3: [2, 0, 3], l5: [2, 0, 3, -1, -2] },
+    { name: 'Pop', v: 2, l3: [4, -2, 0], l5: [4, -2, 0, -2, -3] },
+    { name: 'Intenso', v: 3, l3: [6, 0, 0], l5: [6, 0, 0, -1, -4] },
+    { name: 'Clássico', v: 4, l3: [4, 2, 0], l5: [4, 2, 0, 0, -5] },
+    { name: 'Jazz', v: 5, l3: [0, 4, 2], l5: [0, 4, 2, -2, -6] },
+    { name: 'Personalizado', v: 6, l3: null, l5: null }
   ];
   const DJ = [{ n: 'DJ 1', v: 0 }, { n: 'DJ 2', v: 1 }, { n: 'DJ 3', v: 2 }, { n: 'SCRATCH 1', v: 3 }, { n: 'SCRATCH 2', v: 4 }, { n: 'SCRATCH 3', v: 5 }];
   const TIMES = [15, 30, 45, 60, 90, 120];
@@ -529,8 +531,9 @@ window.addEventListener('error', e => window.__errs.push(e.message));
   // ----- Comandos (cada um escolhe o dialeto certo) -----
   const S = {
     preset(v) { if (proto.neu) cmd(10, v); else if (proto.old) write('AE58', 'AE63', [v]); },
-    band(i, level) {                     // i: 0..4, level: -9..+9
-      const b = [i + 1, level > 0 ? 1 : 0, Math.abs(level)];
+    band(i, level) {                     // i: 0..4, level: -9 (menos) a +9 (mais)
+      // No app oficial o 2º byte é 0 para AUMENTAR e 1 para DIMINUIR (a barra dele conta a partir do topo)
+      const b = [i + 1, level < 0 ? 1 : 0, Math.abs(level)];
       if (proto.neu) cmd(11, ...b); else if (proto.old) write('AE0B', 'AE21', b);
     },
     boost(on) { if (proto.neu) cmd(1, on ? 1 : 0); else if (proto.old) write('AE0B', 'AE0C', [on ? 1 : 0]); },
@@ -754,7 +757,8 @@ window.addEventListener('error', e => window.__errs.push(e.message));
   function renderSound() {
     const n = bandCount(), names = n === 5 ? BAND_NAMES5 : BAND_NAMES3;
     const p = SPK_PRESETS.find(x => x.v === spk.preset) || SPK_PRESETS[0];
-    const lv = p.levels ? (n === 5 ? p.levels : [p.levels[0], p.levels[2], p.levels[4]]) : spk.levels.slice(0, n);
+    const pl = n === 5 ? p.l5 : p.l3;
+    const lv = pl ? pl : spk.levels.slice(0, n);
     const box = $('spkBands');
     if (box.children.length !== n) {
       box.innerHTML = names.map((nm, i) => `<div class="band"><span class="db" id="sdb${i}"></span>
@@ -941,15 +945,19 @@ window.addEventListener('error', e => window.__errs.push(e.message));
     { f: 'e-o-dj-dos-guri', n: 'É o DJ dos guri' }, { f: 'vamo-animar-gurizada', n: 'Vamo animar gurizada' },
     { f: 'vamo-dale-no-grau', n: 'Vamo dale no grau' }, { f: 'ja-virou-rave', n: 'Já virou rave o bagulho' },
     { f: 'a-galera-nao-ta-entendendo', n: 'A galera não tá entendendo nada' }, { f: 'agora-me-ferrei', n: 'Agora me ferrei' },
-    { f: 'fudeu-ne-guri', n: 'Fudeu né guri, meu Deus' }, { f: 'fodeback', n: 'Fodeback' }
+    { f: 'fodeback', n: 'Fodeback' }
   ];
-  let vCtx, vGain, vCur = null, vVol = store.get('vvol', 100);
+  let vCtx, vGain, vCur = null, vVol = store.get('vvol2', 200);
   const vRaw = {}, vBuf = {};
   VINHETAS.forEach(v => { vRaw[v.f] = fetch('sons/' + v.f + '.mp3').then(r => r.arrayBuffer()).catch(() => null); });  // baixa antes
   function vContext() {
     if (!vCtx) {
       vCtx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
-      vGain = vCtx.createGain(); vGain.gain.value = vVol / 100; vGain.connect(vCtx.destination);
+      // Ganho alto + limitador: dá para passar de 100% sem estourar o som
+      vGain = vCtx.createGain(); vGain.gain.value = vVol / 100;
+      const lim = vCtx.createDynamicsCompressor();
+      lim.threshold.value = -2; lim.knee.value = 2; lim.ratio.value = 20; lim.attack.value = 0.002; lim.release.value = 0.1;
+      vGain.connect(lim); lim.connect(vCtx.destination);
     }
     return vCtx;
   }
@@ -984,7 +992,7 @@ window.addEventListener('error', e => window.__errs.push(e.message));
   document.querySelectorAll('.vvol').forEach(inp => {
     inp.value = vVol;
     inp.addEventListener('input', e => {
-      vVol = +e.target.value; store.set('vvol', vVol);
+      vVol = +e.target.value; store.set('vvol2', vVol);
       if (vGain) vGain.gain.value = vVol / 100;
       document.querySelectorAll('.vvol').forEach(o => { if (o !== e.target) o.value = vVol; });
       document.querySelectorAll('.vvolTxt').forEach(t => t.textContent = vVol + '%');
@@ -1055,9 +1063,9 @@ window.addEventListener('error', e => window.__errs.push(e.message));
   let ducked = false;
   function duckMusic(on) {
     ducked = on;
-    if (ctx) volGain.gain.setTargetAtTime(Math.pow(volume / 100, 2) * (on ? 0.35 : 1), ctx.currentTime, on ? 0.05 : 0.3);
+    if (ctx) volGain.gain.setTargetAtTime(Math.pow(volume / 100, 2) * (on ? 0.2 : 1), ctx.currentTime, on ? 0.05 : 0.3);
   }
-  function applyVolume() { if (ctx) volGain.gain.setTargetAtTime(Math.pow(volume / 100, 2) * (ducked ? 0.35 : 1), ctx.currentTime, 0.03); else audio.volume = volume / 100; }
+  function applyVolume() { if (ctx) volGain.gain.setTargetAtTime(Math.pow(volume / 100, 2) * (ducked ? 0.2 : 1), ctx.currentTime, 0.03); else audio.volume = volume / 100; }
 
   const bandsEl = $('bands');
   bandsEl.innerHTML = BANDS.map((b, i) => `<div class="band"><span class="db" id="db${i}"></span>
