@@ -240,6 +240,11 @@
         <label class="switch"><input type="checkbox" id="autoRe" checked><span></span></label>
       </div>
       <div class="toggle-row">
+        <div><b>Manter meus ajustes</b><div class="muted">Ao reconectar, devolve para a caixa o equalizador, BOOST e luzes que você deixou</div></div>
+        <div class="spacer"></div>
+        <label class="switch"><input type="checkbox" id="keep" checked><span></span></label>
+      </div>
+      <div class="toggle-row">
         <div><b>Manter tela ligada</b><div class="muted">Bom para festa com o app aberto</div></div>
         <div class="spacer"></div>
         <label class="switch"><input type="checkbox" id="wake"><span></span></label>
@@ -415,7 +420,7 @@
 <audio id="audio" preload="metadata"></audio>
 
 <script>
-const APP_VERSION = '6';
+const APP_VERSION = '7';
 window.__errs = [];
 window.addEventListener('error', e => window.__errs.push(e.message));
 (() => {
@@ -625,7 +630,8 @@ window.addEventListener('error', e => window.__errs.push(e.message));
     if (bat) showBattery(bat[0]);
     notify('180F', '2A19', v => showBattery(v[0])).catch(() => {});
 
-    if (proto.old) {
+    const keep = $('keep').checked;
+    if (proto.old && !keep) {
       const b = await read('AE0B', 'AE0D');
       if (b) { spk.boost = b[0] === 1; renderSound(); }
     }
@@ -634,7 +640,8 @@ window.addEventListener('error', e => window.__errs.push(e.message));
       await read('AF10', 'AF14');
       const st = await read('AF24', 'AF28');
       if (st && st.length >= 7) {
-        spk.playing = st[0] === 1; spk.lights = st[1] === 0; spk.usbMode = st[3]; spk.source = st[5]; spk.intensity = st[6];
+        spk.playing = st[0] === 1; spk.usbMode = st[3]; spk.source = st[5];
+        if (!keep) { spk.lights = st[1] === 0; spk.intensity = st[6]; }
       }
       notify('AF24', 'AF27', v => { spk.playing = v[0] === 1; spk.lights = v[1] === 0; renderAll(); }).catch(() => {});
     }
@@ -649,9 +656,34 @@ window.addEventListener('error', e => window.__errs.push(e.message));
         }
       });
     }
-    // Reaplica o equalizador personalizado salvo, como o app oficial faz
-    if (spk.preset === 6) applyCustomEq();
+    // Devolve para a caixa os ajustes que você deixou (ela volta ao padrão quando perde a conexão)
+    if (keep) applyAll(); else if (spk.preset === 6) applyCustomEq();
     renderAll();
+    startKeepAlive();
+  }
+
+  function applyAll() {
+    if (spk.preset === 6) applyCustomEq(); else S.preset(spk.preset);
+    S.boost(spk.boost);
+    if (hasLights()) {
+      S.lights(spk.lights);
+      if (spk.lights) {
+        S.intensity(spk.intensity);
+        spk.colors.forEach((on, i) => S.color(i, on));
+        S.sync(spk.sync);
+      }
+    }
+    addLog('ajustes reaplicados na caixa');
+  }
+
+  // Conversa com a caixa de tempos em tempos para a conexão não cair por falta de uso
+  let keepAliveTimer;
+  function startKeepAlive() {
+    clearInterval(keepAliveTimer);
+    keepAliveTimer = setInterval(() => {
+      if (!server || !server.connected) return clearInterval(keepAliveTimer);
+      read('180F', '2A19').then(v => { if (v) showBattery(v[0]); });
+    }, 15000);
   }
 
   function onNewNotify(t) {
@@ -699,7 +731,8 @@ window.addEventListener('error', e => window.__errs.push(e.message));
     retryTimer = setTimeout(connectGatt, wait);
   }
   function onDisconnected() {
-    server = null;
+    server = null; clearInterval(keepAliveTimer);
+    addLog('caixa desconectou' + (document.hidden ? ' (app em segundo plano)' : ''));
     if (wantConnected) { toast('A caixa desconectou'); scheduleRetry(); } else setStatus('off');
   }
   function useDevice(d) {
@@ -727,7 +760,7 @@ window.addEventListener('error', e => window.__errs.push(e.message));
         }
         useDevice(d);
       }
-      wantConnected = true; retry = 0;
+      wantConnected = true; retry = 0; store.set('wantConnected', true);
       await connectGatt();
     } catch (err) {
       if (err && err.name === 'NotFoundError') log('Nenhuma caixa escolhida.');
@@ -735,17 +768,23 @@ window.addEventListener('error', e => window.__errs.push(e.message));
     }
   });
   $('btnDisconnect').addEventListener('click', () => {
-    wantConnected = false; clearTimeout(retryTimer);
+    wantConnected = false; store.set('wantConnected', false); clearTimeout(retryTimer);
     if (device && device.gatt.connected) device.gatt.disconnect();
     server = null; setStatus('off'); log('');
   });
   $('autoRe').checked = store.get('autoRe', true);
+  $('keep').checked = store.get('keep', true);
+  $('keep').addEventListener('change', e => store.set('keep', e.target.checked));
   $('autoRe').addEventListener('change', e => store.set('autoRe', e.target.checked));
   if (hasBt && navigator.bluetooth.getDevices) {
     navigator.bluetooth.getDevices().then(list => {
       const last = store.get('lastDevice', null);
       const d = list.find(x => x.name === last);
-      if (d) { useDevice(d); setStatus('off'); }
+      if (d) {
+        useDevice(d); setStatus('off');
+        // Abriu o app de novo: reconecta sozinho na caixa de antes
+        if (store.get('wantConnected', false) && $('autoRe').checked) { wantConnected = true; retry = 0; connectGatt(); }
+      }
     }).catch(() => {});
   }
 
@@ -1221,6 +1260,10 @@ window.addEventListener('error', e => window.__errs.push(e.message));
   $('wake').checked = store.get('wake', false);
   $('wake').addEventListener('change', e => { store.set('wake', e.target.checked); setWake(e.target.checked); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && $('wake').checked) setWake(true); });
+  // Voltou para o app e a caixa tinha caído: reconecta e reaplica os ajustes
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && device && wantConnected && !(server && server.connected) && $('autoRe').checked) { retry = 0; connectGatt(); }
+  });
   if ($('wake').checked) setWake(true);
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
