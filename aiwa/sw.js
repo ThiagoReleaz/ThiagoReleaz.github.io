@@ -1,5 +1,5 @@
 // Guarda os arquivos do app para abrir rápido e funcionar sem internet.
-const CACHE = 'guri-v3';
+const CACHE = 'guri-v4';
 const FILES = ['./', './index.html', './manifest.json', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -18,7 +18,7 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   e.respondWith(
-    fetch(e.request)
+    fetch(e.request, { cache: 'no-cache' })   // sempre confere se há versão nova
       .then(res => {
         const copy = res.clone();
         caches.open(CACHE).then(c => c.put(e.request, copy));
