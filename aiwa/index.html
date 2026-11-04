@@ -75,8 +75,11 @@
 
   /* Hero da caixa */
   .hero { position: relative; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); background: radial-gradient(120% 100% at 50% 110%, #2a1a12 0%, var(--panel) 65%); padding: 20px 18px 18px; margin-top: 6px; }
-  .boombox { display: block; width: 100%; max-width: 330px; height: auto; margin: 0 auto; }
-  .boombox .led { transition: opacity .3s, fill .3s; }
+  .spk-photo { position: relative; aspect-ratio: 900 / 525; border-radius: 16px; overflow: hidden; background: #fff; }
+  .spk-photo img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .spk-light { position: absolute; inset: 0; background: rgb(40,140,255); opacity: 0;
+    -webkit-mask: url(img/luz.png) center / 100% 100% no-repeat; mask: url(img/luz.png) center / 100% 100% no-repeat; }
+  .spk-glow { position: absolute; inset: 0; filter: blur(10px); }
   .hero .nm { font-weight: 800; font-size: 19px; margin-top: 10px; }
   .battery { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
   .battery .cells { display: inline-flex; gap: 2px; padding: 2px; border: 1.5px solid var(--muted); border-radius: 4px; }
@@ -173,22 +176,11 @@
   <!-- ===================== CAIXA ===================== -->
   <section class="tab active" id="tab-caixa">
     <div class="hero">
-      <svg class="boombox" viewBox="0 0 320 170" aria-hidden="true">
-        <path d="M110 34 V20 a10 10 0 0 1 10-10 h80 a10 10 0 0 1 10 10 V34" fill="none" stroke="#3a3f48" stroke-width="8" stroke-linecap="round"/>
-        <rect x="8" y="34" width="304" height="128" rx="30" fill="#1d2026" stroke="#2f343c" stroke-width="2"/>
-        <g id="woofers">
-          <circle cx="82" cy="98" r="48" fill="#0b0c0f" stroke="#3a3f48" stroke-width="4"/>
-          <circle cx="238" cy="98" r="48" fill="#0b0c0f" stroke="#3a3f48" stroke-width="4"/>
-          <circle class="led" data-i="0" cx="82" cy="98" r="40" fill="none" stroke-width="5"/>
-          <circle class="led" data-i="1" cx="238" cy="98" r="40" fill="none" stroke-width="5"/>
-          <circle cx="82" cy="98" r="16" fill="#26292f"/>
-          <circle cx="238" cy="98" r="16" fill="#26292f"/>
-        </g>
-        <rect x="140" y="58" width="40" height="80" rx="10" fill="#14161a"/>
-        <circle class="led" data-i="2" cx="160" cy="74" r="5"/>
-        <circle class="led" data-i="3" cx="160" cy="98" r="5"/>
-        <circle class="led" data-i="4" cx="160" cy="122" r="5"/>
-      </svg>
+      <div class="spk-photo" aria-hidden="true">
+        <img src="img/caixa.jpg" alt="" width="900" height="525">
+        <div class="spk-glow"><div class="spk-light"></div></div>
+        <div class="spk-light"></div>
+      </div>
       <div class="row">
         <div style="min-width:0">
           <div class="nm" id="devName">Nenhuma caixa</div>
@@ -238,6 +230,11 @@
         <div><b>Reconectar sozinho</b><div class="muted">Volta a conectar se a caixa cair</div></div>
         <div class="spacer"></div>
         <label class="switch"><input type="checkbox" id="autoRe" checked><span></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><b>Manter meus ajustes</b><div class="muted">Ao reconectar, devolve para a caixa o equalizador, BOOST e luzes que você deixou</div></div>
+        <div class="spacer"></div>
+        <label class="switch"><input type="checkbox" id="keep" checked><span></span></label>
       </div>
       <div class="toggle-row">
         <div><b>Manter tela ligada</b><div class="muted">Bom para festa com o app aberto</div></div>
@@ -415,7 +412,7 @@
 <audio id="audio" preload="metadata"></audio>
 
 <script>
-const APP_VERSION = '6';
+const APP_VERSION = '10';
 window.__errs = [];
 window.addEventListener('error', e => window.__errs.push(e.message));
 (() => {
@@ -625,7 +622,8 @@ window.addEventListener('error', e => window.__errs.push(e.message));
     if (bat) showBattery(bat[0]);
     notify('180F', '2A19', v => showBattery(v[0])).catch(() => {});
 
-    if (proto.old) {
+    const keep = $('keep').checked;
+    if (proto.old && !keep) {
       const b = await read('AE0B', 'AE0D');
       if (b) { spk.boost = b[0] === 1; renderSound(); }
     }
@@ -634,7 +632,8 @@ window.addEventListener('error', e => window.__errs.push(e.message));
       await read('AF10', 'AF14');
       const st = await read('AF24', 'AF28');
       if (st && st.length >= 7) {
-        spk.playing = st[0] === 1; spk.lights = st[1] === 0; spk.usbMode = st[3]; spk.source = st[5]; spk.intensity = st[6];
+        spk.playing = st[0] === 1; spk.usbMode = st[3]; spk.source = st[5];
+        if (!keep) { spk.lights = st[1] === 0; spk.intensity = st[6]; }
       }
       notify('AF24', 'AF27', v => { spk.playing = v[0] === 1; spk.lights = v[1] === 0; renderAll(); }).catch(() => {});
     }
@@ -649,9 +648,34 @@ window.addEventListener('error', e => window.__errs.push(e.message));
         }
       });
     }
-    // Reaplica o equalizador personalizado salvo, como o app oficial faz
-    if (spk.preset === 6) applyCustomEq();
+    // Devolve para a caixa os ajustes que você deixou (ela volta ao padrão quando perde a conexão)
+    if (keep) applyAll(); else if (spk.preset === 6) applyCustomEq();
     renderAll();
+    startKeepAlive();
+  }
+
+  function applyAll() {
+    if (spk.preset === 6) applyCustomEq(); else S.preset(spk.preset);
+    S.boost(spk.boost);
+    if (hasLights()) {
+      S.lights(spk.lights);
+      if (spk.lights) {
+        S.intensity(spk.intensity);
+        spk.colors.forEach((on, i) => S.color(i, on));
+        S.sync(spk.sync);
+      }
+    }
+    addLog('ajustes reaplicados na caixa');
+  }
+
+  // Conversa com a caixa de tempos em tempos para a conexão não cair por falta de uso
+  let keepAliveTimer;
+  function startKeepAlive() {
+    clearInterval(keepAliveTimer);
+    keepAliveTimer = setInterval(() => {
+      if (!server || !server.connected) return clearInterval(keepAliveTimer);
+      read('180F', '2A19').then(v => { if (v) showBattery(v[0]); });
+    }, 15000);
   }
 
   function onNewNotify(t) {
@@ -699,7 +723,8 @@ window.addEventListener('error', e => window.__errs.push(e.message));
     retryTimer = setTimeout(connectGatt, wait);
   }
   function onDisconnected() {
-    server = null;
+    server = null; clearInterval(keepAliveTimer);
+    addLog('caixa desconectou' + (document.hidden ? ' (app em segundo plano)' : ''));
     if (wantConnected) { toast('A caixa desconectou'); scheduleRetry(); } else setStatus('off');
   }
   function useDevice(d) {
@@ -727,7 +752,7 @@ window.addEventListener('error', e => window.__errs.push(e.message));
         }
         useDevice(d);
       }
-      wantConnected = true; retry = 0;
+      wantConnected = true; retry = 0; store.set('wantConnected', true);
       await connectGatt();
     } catch (err) {
       if (err && err.name === 'NotFoundError') log('Nenhuma caixa escolhida.');
@@ -735,17 +760,23 @@ window.addEventListener('error', e => window.__errs.push(e.message));
     }
   });
   $('btnDisconnect').addEventListener('click', () => {
-    wantConnected = false; clearTimeout(retryTimer);
+    wantConnected = false; store.set('wantConnected', false); clearTimeout(retryTimer);
     if (device && device.gatt.connected) device.gatt.disconnect();
     server = null; setStatus('off'); log('');
   });
   $('autoRe').checked = store.get('autoRe', true);
+  $('keep').checked = store.get('keep', true);
+  $('keep').addEventListener('change', e => store.set('keep', e.target.checked));
   $('autoRe').addEventListener('change', e => store.set('autoRe', e.target.checked));
   if (hasBt && navigator.bluetooth.getDevices) {
     navigator.bluetooth.getDevices().then(list => {
       const last = store.get('lastDevice', null);
       const d = list.find(x => x.name === last);
-      if (d) { useDevice(d); setStatus('off'); }
+      if (d) {
+        useDevice(d); setStatus('off');
+        // Abriu o app de novo: reconecta sozinho na caixa de antes
+        if (store.get('wantConnected', false) && $('autoRe').checked) { wantConnected = true; retry = 0; connectGatt(); }
+      }
     }).catch(() => {});
   }
 
@@ -893,15 +924,6 @@ window.addEventListener('error', e => window.__errs.push(e.message));
     $('rgbBox').classList.toggle('hidden', !proto.neu);
     $('strobe').checked = spk.strobe; $('speed').value = spk.speed; $('speedVal').textContent = spk.speed;
     document.querySelectorAll('#ledModes .chip').forEach(c => c.classList.toggle('on', +c.dataset.v === spk.ledMode));
-    // Desenho da caixa acompanha as cores ligadas
-    const on = COLORS.filter((c, i) => spk.colors[i]);
-    document.querySelectorAll('.boombox .led').forEach((el, i) => {
-      const c = on.length ? on[i % on.length] : null;
-      const show = spk.lights && c && server;
-      el.style.opacity = show ? Math.max(.25, spk.intensity / 100) : .08;
-      const col = c ? `rgb(${c.rgb})` : '#555';
-      if (el.getAttribute('fill') === 'none') el.setAttribute('stroke', col); else el.setAttribute('fill', col);
-    });
   }
   $('lightsOn').addEventListener('change', e => { spk.lights = e.target.checked; S.lights(spk.lights); saveSpk(); renderLights(); });
   let intTimer;
@@ -1000,6 +1022,48 @@ window.addEventListener('error', e => window.__errs.push(e.message));
   });
   document.querySelectorAll('.vvolTxt').forEach(t => t.textContent = vVol + '%');
 
+
+  /* ---------- Luzes do desenho da caixa (imitam a caixa de verdade) ---------- */
+  const ledEls = { lights: document.querySelectorAll('.spk-photo .spk-light') };
+  let ledLevel = 0, ledColorStart = performance.now(), ledBuf;
+  let ledSource = () => null;   // o player liga isso quando estiver pronto
+  // Tons usados só no desenho: mais claros, para parecer luz acesa na tela
+  const SHOW = { '0,255,0': '40,255,120', '255,255,0': '255,230,40', '255,0,0': '255,50,60', '156,0,255': '180,90,255', '0,0,255': '40,140,255' };
+  (function ledLoop(now) {
+    requestAnimationFrame(ledLoop);
+    if (document.hidden || !$('tab-caixa').classList.contains('active')) return;
+    const on = COLORS.filter((c, i) => spk.colors[i]);
+    const live = !!(server && server.connected);
+    const lit = spk.lights && on.length > 0;
+    // Troca de cor entre as cores ligadas, com transição suave
+    const per = 1600, t = (now - ledColorStart) / per;
+    const ci = Math.floor(t) % Math.max(1, on.length), f = t % 1;
+    const c1 = (on[ci] ? SHOW[on[ci].rgb] : '90,90,90').split(',').map(Number);
+    const c2 = (on[(ci + 1) % Math.max(1, on.length)] ? SHOW[on[(ci + 1) % on.length].rgb] : '90,90,90').split(',').map(Number);
+    const k = f < .75 ? 0 : (f - .75) / .25;
+    const rgb = c1.map((v, i) => Math.round(v + (c2[i] - v) * k)).join(',');
+    // Pulsa com a batida: usa o som do player do app; sem ele, pulsa num ritmo de festa
+    let beat = 1;
+    if (spk.sync) {
+      let lvl = 0;
+      const an = ledSource();
+      if (an) {
+        ledBuf = ledBuf || new Uint8Array(an.frequencyBinCount); an.getByteFrequencyData(ledBuf);
+        for (let i = 1; i < 8; i++) lvl += ledBuf[i]; lvl = lvl / (7 * 255);
+      } else {
+        const ph = (now / 500) % 1; lvl = Math.pow(1 - ph, 3);
+      }
+      ledLevel += (lvl - ledLevel) * (lvl > ledLevel ? .6 : .12);
+      beat = .45 + .55 * ledLevel;
+    }
+    const inten = Math.max(.15, spk.intensity / 100);
+    const a = lit ? inten * beat * (live ? 1 : .45) : 0;
+    const col = lit ? `rgb(${rgb})` : '#3a3f48';
+    ledEls.lights.forEach((e, i) => {
+      e.style.background = `rgb(${rgb})`;
+      e.style.opacity = i === 0 ? a * .7 : a;   // o primeiro é o brilho espalhado
+    });
+  })(performance.now());
   function renderAll() { renderCaixa(); renderSound(); renderLights(); renderDiag(); }
   function renderDialect() { document.querySelectorAll('#dialect button').forEach(b => b.classList.toggle('on', b.dataset.v === store.get('dialect', 'auto'))); }
   $('dialect').addEventListener('click', async e => {
@@ -1033,6 +1097,7 @@ window.addEventListener('error', e => window.__errs.push(e.message));
   let limiterOn = store.get('limiter', true);
   let volume = store.get('vol', 90);
   let ctx, filters = [], preGain, volGain, limiter, analyser;
+  ledSource = () => (analyser && !audio.paused ? analyser : null);
 
   function buildGraph() {
     if (ctx) return;
@@ -1221,6 +1286,10 @@ window.addEventListener('error', e => window.__errs.push(e.message));
   $('wake').checked = store.get('wake', false);
   $('wake').addEventListener('change', e => { store.set('wake', e.target.checked); setWake(e.target.checked); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && $('wake').checked) setWake(true); });
+  // Voltou para o app e a caixa tinha caído: reconecta e reaplica os ajustes
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && device && wantConnected && !(server && server.connected) && $('autoRe').checked) { retry = 0; connectGatt(); }
+  });
   if ($('wake').checked) setWake(true);
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
