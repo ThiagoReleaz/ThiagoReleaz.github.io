@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0e1013">
-<meta name="description" content="Player com equalizador e controle de conexão para a caixa Aiwa Boombox.">
-<title>Boombox TH</title>
+<meta name="description" content="Controle da caixa Aiwa Boombox: equalizador, BOOST, luzes, efeitos de DJ e player.">
+<title>Aiwa dos Guri</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -27,22 +27,17 @@
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; height: 100%; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-    font-size: 16px;
-    overscroll-behavior: none;
-  }
+  body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; font-size: 16px; overscroll-behavior: none; }
   button { font: inherit; color: inherit; cursor: pointer; }
   .app { max-width: 520px; margin: 0 auto; min-height: 100%; padding: 0 16px calc(var(--nav-h) + 24px + env(safe-area-inset-bottom)); }
 
-  /* Topo */
-  header { display: flex; align-items: center; justify-content: space-between; padding: calc(14px + env(safe-area-inset-top)) 0 10px; }
-  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; letter-spacing: .2px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: calc(14px + env(safe-area-inset-top)) 0 10px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 19px; white-space: nowrap; }
   .brand img { width: 34px; height: 34px; border-radius: 9px; }
-  .pill { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); font-size: 13px; color: var(--muted); }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .brand span { color: var(--accent); }
+  .pill { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); font-size: 13px; color: var(--muted); min-width: 0; }
+  .pill span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
   .dot.ok { background: var(--ok); box-shadow: 0 0 10px var(--ok); }
   .dot.warn { background: var(--warn); }
   .dot.bad { background: var(--bad); }
@@ -52,89 +47,117 @@
   .muted { color: var(--muted); font-size: 14px; line-height: 1.5; }
   .row { display: flex; align-items: center; gap: 12px; }
   .spacer { flex: 1; }
-
   .btn { border: 0; border-radius: 14px; padding: 13px 18px; background: var(--panel-2); font-weight: 600; }
   .btn.primary { background: var(--accent); color: #fff; }
   .btn.ghost { background: transparent; border: 1px solid var(--line); }
   .btn.block { width: 100%; }
-  .btn:active { transform: scale(.98); }
+  .btn:active, .chip:active, .pad:active, .ctrl:active { transform: scale(.97); }
   .btn:disabled { opacity: .5; }
-
   section.tab { display: none; }
   section.tab.active { display: block; }
-
-  /* Player */
-  .stage { position: relative; height: 190px; border-radius: var(--radius); overflow: hidden; background: radial-gradient(120% 90% at 50% 100%, #2a1a12 0%, var(--panel) 60%); border: 1px solid var(--line); margin-top: 6px; }
-  #viz { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .now { position: absolute; left: 16px; right: 16px; bottom: 14px; }
-  .now .title { font-size: 19px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .now .sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
-
-  .seek { margin-top: 16px; }
-  .times { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .needs-speaker.off { opacity: .45; pointer-events: none; }
   input[type=range] { width: 100%; accent-color: var(--accent); }
-  .controls { display: flex; align-items: center; justify-content: center; gap: 22px; margin: 12px 0 4px; }
-  .ctrl { width: 56px; height: 56px; border-radius: 50%; border: 0; background: var(--panel-2); display: grid; place-items: center; }
-  .ctrl.play { width: 76px; height: 76px; background: var(--accent); box-shadow: 0 8px 24px rgba(255,90,31,.35); }
-  .ctrl svg { width: 26px; height: 26px; fill: currentColor; }
-  .ctrl.play svg { width: 34px; height: 34px; fill: #fff; }
-  .vol { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
-  .vol svg { width: 22px; height: 22px; fill: var(--muted); flex: none; }
 
-  .list { list-style: none; margin: 10px 0 0; padding: 0; }
-  .list li { display: flex; align-items: center; gap: 12px; padding: 12px 10px; border-radius: 12px; }
-  .list li + li { border-top: 1px solid var(--line); }
-  .list li.playing { background: var(--accent-soft); }
-  .list li.playing .n { color: var(--accent); }
-  .list .n { width: 22px; text-align: center; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
-  .list .name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .list .x { border: 0; background: transparent; color: var(--muted); font-size: 20px; padding: 0 6px; }
-  .empty { text-align: center; padding: 22px 8px 8px; }
-
-  /* Equalizador */
   .switch { position: relative; width: 52px; height: 30px; flex: none; }
   .switch input { opacity: 0; width: 0; height: 0; }
   .switch span { position: absolute; inset: 0; background: var(--panel-2); border: 1px solid var(--line); border-radius: 999px; transition: .2s; }
   .switch span::after { content: ""; position: absolute; width: 22px; height: 22px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; }
   .switch input:checked + span { background: var(--accent); border-color: var(--accent); }
   .switch input:checked + span::after { transform: translateX(22px); }
+  .toggle-row { display: flex; align-items: center; gap: 12px; }
+  .toggle-row + .toggle-row { border-top: 1px solid var(--line); padding-top: 14px; margin-top: 14px; }
 
-  .presets { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 2px; scrollbar-width: none; }
-  .presets::-webkit-scrollbar { display: none; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .chips.scroll { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .chips.scroll::-webkit-scrollbar { display: none; }
   .chip { flex: none; border: 1px solid var(--line); background: var(--panel-2); border-radius: 999px; padding: 9px 15px; font-size: 14px; }
   .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 
-  .bands { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 16px; }
-  .band { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-  .band .db { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; min-height: 15px; }
-  .band input[type=range] { writing-mode: vertical-lr; direction: rtl; width: 32px; height: 190px; margin: 0; }
-  .band label { font-size: 12px; color: var(--muted); }
-  .eq-off .bands, .eq-off .presets, .eq-off .extra { opacity: .4; pointer-events: none; }
-  .extra { margin-top: 18px; display: grid; gap: 14px; }
-  .extra .lbl { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px; }
-  .extra .lbl b { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
+  /* Hero da caixa */
+  .hero { position: relative; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); background: radial-gradient(120% 100% at 50% 110%, #2a1a12 0%, var(--panel) 65%); padding: 20px 18px 18px; margin-top: 6px; }
+  .boombox { display: block; width: 100%; max-width: 330px; height: auto; margin: 0 auto; }
+  .boombox .led { transition: opacity .3s, fill .3s; }
+  .hero .nm { font-weight: 800; font-size: 19px; margin-top: 10px; }
+  .battery { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+  .battery .cells { display: inline-flex; gap: 2px; padding: 2px; border: 1.5px solid var(--muted); border-radius: 4px; }
+  .battery .cells i { width: 5px; height: 9px; border-radius: 1px; background: var(--panel-2); }
+  .battery .cells i.on { background: var(--ok); }
+  .battery.low .cells i.on { background: var(--bad); }
 
-  /* Conexão */
-  .device { display: flex; align-items: center; gap: 14px; }
-  .device .ico { width: 54px; height: 54px; border-radius: 16px; background: var(--panel-2); display: grid; place-items: center; flex: none; }
-  .device .ico svg { width: 30px; height: 30px; fill: var(--accent); }
-  .device .nm { font-weight: 700; font-size: 17px; }
-  .battery { display: none; margin-top: 14px; }
-  .battery .bar { height: 10px; border-radius: 99px; background: var(--panel-2); overflow: hidden; margin-top: 6px; }
-  .battery .bar i { display: block; height: 100%; background: var(--ok); width: 0; transition: width .4s; }
+  .controls { display: flex; align-items: center; justify-content: center; gap: 22px; margin: 6px 0; }
+  .ctrl { width: 56px; height: 56px; border-radius: 50%; border: 0; background: var(--panel-2); display: grid; place-items: center; }
+  .ctrl.play { width: 72px; height: 72px; background: var(--accent); box-shadow: 0 8px 24px rgba(255,90,31,.35); }
+  .ctrl svg { width: 26px; height: 26px; fill: currentColor; }
+  .ctrl.play svg { width: 32px; height: 32px; fill: #fff; }
+  .seg { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--panel-2); border-radius: 14px; padding: 4px; gap: 4px; margin-top: 12px; }
+  .seg button { border: 0; background: transparent; border-radius: 10px; padding: 10px 4px; font-size: 14px; color: var(--muted); font-weight: 600; }
+  .seg button.on { background: var(--accent); color: #fff; }
+
+  .scenes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 12px; }
+  .scene { border: 1px solid var(--line); background: var(--panel-2); border-radius: 16px; padding: 14px; text-align: left; }
+  .scene b { display: block; font-size: 15px; }
+  .scene small { color: var(--muted); font-size: 12px; }
+  .scene .e { font-size: 22px; display: block; margin-bottom: 6px; }
+
+  /* Equalizador */
+  .bands { display: flex; justify-content: space-around; gap: 4px; margin-top: 16px; }
+  .band { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; }
+  .band .db { font-size: 13px; color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; min-height: 16px; }
+  .band input[type=range] { writing-mode: vertical-lr; direction: rtl; width: 34px; height: 180px; margin: 0; }
+  .band label { font-size: 12px; color: var(--muted); text-align: center; }
+  .pads { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+  .pad { border: 0; border-radius: 16px; padding: 18px 6px; font-weight: 800; font-size: 14px; letter-spacing: .5px; background: linear-gradient(160deg, #2a2f37, #1c2026); border: 1px solid var(--line); }
+  .pad.hit { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .timer-left { font-size: 13px; color: var(--accent); margin-top: 10px; min-height: 18px; }
+
+  .vpads { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 12px; }
+  .vpad { border: 1px solid var(--line); background: var(--panel-2); border-radius: 14px; padding: 13px 12px; text-align: left; font-weight: 700; font-size: 14px; line-height: 1.25; position: relative; overflow: hidden; }
+  .vpad::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--accent-soft); transition: none; }
+  .vpad.on { border-color: var(--accent); color: #fff; }
+  .vpad.on::before { width: 100%; transition: width var(--d, 3s) linear; }
+  .vpad span { position: relative; }
+  /* Luzes */
+  .colors { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 14px; }
+  .color { aspect-ratio: 1; border-radius: 50%; border: 3px solid transparent; position: relative; transition: .2s; }
+  .color.off { opacity: .25; filter: grayscale(.6); }
+  .color.on { border-color: #fff; box-shadow: 0 0 18px var(--c); }
+  .color i { position: absolute; inset: 0; display: grid; place-items: center; font-style: normal; font-weight: 800; color: rgba(0,0,0,.6); font-size: 14px; }
+  .lbl { display: flex; justify-content: space-between; font-size: 14px; margin: 16px 0 6px; }
+  .lbl b { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .rgb { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+  .rgb input[type=color] { width: 54px; height: 40px; border: 0; background: none; padding: 0; }
+
+  /* Player */
+  .stage { position: relative; height: 170px; border-radius: var(--radius); overflow: hidden; background: radial-gradient(120% 90% at 50% 100%, #2a1a12 0%, var(--panel) 60%); border: 1px solid var(--line); margin-top: 6px; }
+  #viz { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .now { position: absolute; left: 16px; right: 16px; bottom: 14px; }
+  .now .title { font-size: 18px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .now .sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .seek { margin-top: 14px; }
+  .times { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .vol { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+  .vol svg { width: 22px; height: 22px; fill: var(--muted); flex: none; }
+  .list { list-style: none; margin: 10px 0 0; padding: 0; }
+  .list li { display: flex; align-items: center; gap: 12px; padding: 12px 10px; border-radius: 12px; }
+  .list li + li { border-top: 1px solid var(--line); }
+  .list li.playing { background: var(--accent-soft); }
+  .list li.playing .n { color: var(--accent); }
+  .list .n { width: 22px; text-align: center; color: var(--muted); font-size: 13px; }
+  .list .name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .list .x { border: 0; background: transparent; color: var(--muted); font-size: 20px; padding: 0 6px; }
+  .empty { text-align: center; padding: 18px 8px 4px; }
+  .pbands { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-top: 14px; }
+  .pbands .band input[type=range] { height: 140px; width: 28px; }
+
   .steps { margin: 10px 0 0; padding-left: 20px; }
   .steps li { margin: 8px 0; line-height: 1.45; font-size: 14px; color: #cfd3d9; }
   .log { margin-top: 10px; font-size: 13px; color: var(--muted); min-height: 18px; }
-  .toggle-row { display: flex; align-items: center; gap: 12px; padding: 4px 0; }
-  .toggle-row + .toggle-row { border-top: 1px solid var(--line); padding-top: 14px; margin-top: 10px; }
 
-  /* Navegação inferior */
   nav.bottom { position: fixed; left: 0; right: 0; bottom: 0; background: rgba(14,16,19,.94); backdrop-filter: blur(12px); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); z-index: 5; }
-  nav.bottom .in { max-width: 520px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); height: var(--nav-h); }
+  nav.bottom .in { max-width: 520px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); height: var(--nav-h); }
   nav.bottom button { border: 0; background: transparent; color: var(--muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; }
   nav.bottom button svg { width: 24px; height: 24px; fill: currentColor; }
   nav.bottom button.active { color: var(--accent); }
-
   .toast { position: fixed; left: 50%; bottom: calc(var(--nav-h) + 18px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(20px); background: #2a2f37; color: #fff; padding: 11px 16px; border-radius: 12px; font-size: 14px; opacity: 0; transition: .25s; pointer-events: none; max-width: calc(100% - 32px); z-index: 9; }
   .toast.show { opacity: 1; transform: translateX(-50%); }
   .hidden { display: none !important; }
@@ -143,34 +166,208 @@
 <body>
 <div class="app">
   <header>
-    <div class="brand"><img src="icons/icon.svg" alt="">Boombox</div>
-    <div class="pill" id="statusPill"><span class="dot" id="statusDot"></span><span id="statusText">Sem caixa</span></div>
+    <div class="brand"><img src="icons/icon.svg" alt="">Aiwa <span>dos Guri</span></div>
+    <div class="pill"><span class="dot" id="statusDot"></span><span id="statusText">Sem caixa</span></div>
   </header>
 
-  <!-- PLAYER -->
-  <section class="tab active" id="tab-player">
+  <!-- ===================== CAIXA ===================== -->
+  <section class="tab active" id="tab-caixa">
+    <div class="hero">
+      <svg class="boombox" viewBox="0 0 320 170" aria-hidden="true">
+        <path d="M110 34 V20 a10 10 0 0 1 10-10 h80 a10 10 0 0 1 10 10 V34" fill="none" stroke="#3a3f48" stroke-width="8" stroke-linecap="round"/>
+        <rect x="8" y="34" width="304" height="128" rx="30" fill="#1d2026" stroke="#2f343c" stroke-width="2"/>
+        <g id="woofers">
+          <circle cx="82" cy="98" r="48" fill="#0b0c0f" stroke="#3a3f48" stroke-width="4"/>
+          <circle cx="238" cy="98" r="48" fill="#0b0c0f" stroke="#3a3f48" stroke-width="4"/>
+          <circle class="led" data-i="0" cx="82" cy="98" r="40" fill="none" stroke-width="5"/>
+          <circle class="led" data-i="1" cx="238" cy="98" r="40" fill="none" stroke-width="5"/>
+          <circle cx="82" cy="98" r="16" fill="#26292f"/>
+          <circle cx="238" cy="98" r="16" fill="#26292f"/>
+        </g>
+        <rect x="140" y="58" width="40" height="80" rx="10" fill="#14161a"/>
+        <circle class="led" data-i="2" cx="160" cy="74" r="5"/>
+        <circle class="led" data-i="3" cx="160" cy="98" r="5"/>
+        <circle class="led" data-i="4" cx="160" cy="122" r="5"/>
+      </svg>
+      <div class="row">
+        <div style="min-width:0">
+          <div class="nm" id="devName">Nenhuma caixa</div>
+          <div class="muted" id="devState">Toque em Conectar para achar sua Aiwa</div>
+        </div>
+        <div class="spacer"></div>
+        <div class="battery hidden" id="battery"><span class="cells"><i></i><i></i><i></i><i></i></span><span id="batTxt"></span></div>
+      </div>
+      <div class="row" style="margin-top:14px;gap:10px">
+        <button class="btn primary" id="btnConnect" style="flex:1">Conectar</button>
+        <button class="btn ghost hidden" id="btnDisconnect">Desconectar</button>
+      </div>
+      <div class="log" id="connLog"></div>
+      <div class="muted hidden" id="noBt">Este navegador não tem Bluetooth. Abra no <b>Chrome</b> do Android.</div>
+    </div>
+
+    <div class="card needs-speaker off">
+      <h2>Cenas rápidas</h2>
+      <div class="muted">Um toque ajusta som, grave e luzes de uma vez</div>
+      <div class="scenes" id="scenes"></div>
+    </div>
+
+    <div class="card needs-speaker off" id="cardMedia">
+      <h2>Controle da caixa</h2>
+      <div class="controls" style="margin-top:12px">
+        <button class="ctrl" id="spkPrev" aria-label="Anterior"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg></button>
+        <button class="ctrl play" id="spkPlay" aria-label="Tocar ou pausar"><svg viewBox="0 0 24 24" id="spkPlayIcon"><path d="M8 5v14l11-7z"/></svg></button>
+        <button class="ctrl" id="spkNext" aria-label="Próxima"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+      </div>
+      <div class="seg" id="source">
+        <button data-v="0" class="on">Bluetooth</button><button data-v="1">USB</button><button data-v="2">AUX</button>
+      </div>
+      <div class="chips hidden" id="usbModes">
+        <button class="chip on" data-v="0">Normal</button><button class="chip" data-v="1">Repetir</button><button class="chip" data-v="2">Aleatório</button><button class="chip" data-v="3">Pasta</button>
+      </div>
+    </div>
+
+    <div class="card needs-speaker off">
+      <h2>Desligar sozinha</h2>
+      <div class="muted">A caixa desliga depois do tempo escolhido</div>
+      <div class="chips" id="timer"></div>
+      <div class="timer-left" id="timerLeft"></div>
+    </div>
+
+    <div class="card">
+      <div class="toggle-row">
+        <div><b>Reconectar sozinho</b><div class="muted">Volta a conectar se a caixa cair</div></div>
+        <div class="spacer"></div>
+        <label class="switch"><input type="checkbox" id="autoRe" checked><span></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><b>Manter tela ligada</b><div class="muted">Bom para festa com o app aberto</div></div>
+        <div class="spacer"></div>
+        <label class="switch"><input type="checkbox" id="wake"><span></span></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Não achou a caixa ou o som corta?</h2>
+      <ol class="steps">
+        <li>Ligue a <b>localização</b> do celular: o Android exige para achar a caixa.</li>
+        <li>Feche o app oficial da Aiwa: só um app por vez consegue controlar a caixa.</li>
+        <li>Para o som, pareie a caixa em <b>Configurações › Bluetooth</b>. Para os controles, use o botão Conectar daqui.</li>
+        <li>Se cortar, fique a até 5 metros e desconecte outros aparelhos Bluetooth.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ===================== SOM ===================== -->
+  <section class="tab" id="tab-som">
+    <div class="card needs-speaker off">
+      <h2>Equalizador da caixa</h2>
+      <div class="muted">Muda o som dentro da Aiwa: vale para Spotify, YouTube, tudo</div>
+      <div class="chips scroll" id="spkPresets"></div>
+      <div class="bands" id="spkBands"></div>
+      <div class="chips" id="myPresets"></div>
+      <button class="btn ghost block" id="savePreset" style="margin-top:12px">Salvar este ajuste</button>
+    </div>
+
+    <div class="card needs-speaker off">
+      <div class="toggle-row">
+        <div><b>BOOST</b><div class="muted">Reforço de grave da caixa</div></div>
+        <div class="spacer"></div>
+        <label class="switch"><input type="checkbox" id="boost"><span></span></label>
+      </div>
+    </div>
+
+    <div class="card needs-speaker off">
+      <h2>Efeitos de DJ</h2>
+      <div class="muted">Toque para soltar o efeito na caixa</div>
+      <div class="pads" id="pads"></div>
+    </div>
+
+    <div class="card">
+      <div class="row"><h2>Vinhetas dos Guri</h2><div class="spacer"></div><button class="btn ghost vstop" style="padding:8px 12px;font-size:13px">Parar</button></div>
+      <div class="muted">Toca por cima da música, direto na caixa</div>
+      <div class="vpads"></div>
+      <div class="lbl"><span>Volume das vinhetas</span><b class="vvolTxt">100%</b></div>
+      <input type="range" class="vvol" min="0" max="150" value="100" aria-label="Volume das vinhetas">
+    </div>
+  </section>
+
+  <!-- ===================== LUZES ===================== -->
+  <section class="tab" id="tab-luzes">
+    <div class="card needs-speaker off">
+      <div class="toggle-row">
+        <div><b>Luzes</b><div class="muted">Liga e desliga o LED da caixa</div></div>
+        <div class="spacer"></div>
+        <label class="switch"><input type="checkbox" id="lightsOn" checked><span></span></label>
+      </div>
+      <div class="lbl"><span>Intensidade</span><b id="intVal">100%</b></div>
+      <input type="range" id="intensity" min="0" max="100" value="100">
+    </div>
+
+    <div class="card needs-speaker off">
+      <h2>Cores</h2>
+      <div class="muted">Toque numa cor para ligar ou desligar</div>
+      <div class="colors" id="colors"></div>
+      <div class="chips">
+        <button class="chip" id="allColors">Todas</button>
+        <button class="chip" id="rotateColors">Só uma, girando</button>
+      </div>
+      <div class="rgb hidden" id="rgbBox">
+        <input type="color" id="rgb" value="#ff5a1f" aria-label="Escolher cor">
+        <div class="muted">Cor personalizada</div>
+      </div>
+    </div>
+
+    <div class="card needs-speaker off">
+      <div class="toggle-row">
+        <div><b>Pisca com a música</b><div class="muted">As luzes seguem a batida</div></div>
+        <div class="spacer"></div>
+        <label class="switch"><input type="checkbox" id="sync" checked><span></span></label>
+      </div>
+      <div class="toggle-row hidden" id="strobeRow">
+        <div><b>Estrobo</b><div class="muted">Pisca rápido</div></div>
+        <div class="spacer"></div>
+        <label class="switch"><input type="checkbox" id="strobe"><span></span></label>
+      </div>
+      <div class="hidden" id="speedBox">
+        <div class="lbl"><span>Velocidade</span><b id="speedVal">3</b></div>
+        <input type="range" id="speed" min="0" max="5" value="3">
+      </div>
+      <div class="hidden" id="ledModeBox">
+        <div class="lbl"><span>Efeito de luz</span></div>
+        <div class="chips" id="ledModes"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PLAYER ===================== -->
+  <section class="tab" id="tab-player">
     <div class="stage">
       <canvas id="viz"></canvas>
       <div class="now">
         <div class="title" id="trackTitle">Nenhuma música</div>
-        <div class="sub" id="trackSub">Adicione músicas do seu celular</div>
+        <div class="sub" id="trackSub">Toque músicas salvas no celular</div>
       </div>
     </div>
-
     <div class="seek">
       <input type="range" id="seek" min="0" max="1000" value="0" aria-label="Posição da música">
       <div class="times"><span id="tCur">0:00</span><span id="tDur">0:00</span></div>
     </div>
-
     <div class="controls">
       <button class="ctrl" id="btnPrev" aria-label="Anterior"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg></button>
       <button class="ctrl play" id="btnPlay" aria-label="Tocar"><svg viewBox="0 0 24 24" id="playIcon"><path d="M8 5v14l11-7z"/></svg></button>
       <button class="ctrl" id="btnNext" aria-label="Próxima"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
     </div>
-
     <div class="vol">
       <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4z"/></svg>
       <input type="range" id="volume" min="0" max="100" value="90" aria-label="Volume">
+    </div>
+
+    <div class="card">
+      <div class="row"><h2>Vinhetas dos Guri</h2><div class="spacer"></div><button class="btn ghost vstop" style="padding:8px 12px;font-size:13px">Parar</button></div>
+      <div class="muted">Toca por cima da música, direto na caixa</div>
+      <div class="vpads"></div>
+      <div class="lbl"><span>Volume das vinhetas</span><b class="vvolTxt">100%</b></div>
+      <input type="range" class="vvol" min="0" max="150" value="100" aria-label="Volume das vinhetas">
     </div>
 
     <div class="card">
@@ -180,97 +377,30 @@
         <button class="btn ghost" id="btnClear" style="padding:8px 12px;font-size:13px">Limpar</button>
       </div>
       <ul class="list" id="playlist"></ul>
-      <div class="empty muted" id="emptyList">Nenhuma música ainda. Toque em <b>Adicionar músicas</b> e escolha arquivos de áudio do celular (MP3, M4A, WAV…).</div>
+      <div class="empty muted" id="emptyList">Nenhuma música ainda. Adicione arquivos de áudio do celular (MP3, M4A, WAV…).</div>
       <input type="file" id="filePick" accept="audio/*" multiple hidden>
       <button class="btn primary block" id="btnAdd" style="margin-top:14px">+ Adicionar músicas</button>
     </div>
-  </section>
 
-  <!-- EQUALIZADOR -->
-  <section class="tab" id="tab-eq">
     <div class="card" id="eqCard">
       <div class="row">
-        <div>
-          <h2>Equalizador</h2>
-          <div class="muted">Ajusta o som das músicas tocadas aqui no app</div>
-        </div>
+        <div><h2>Equalizador do celular</h2><div class="muted">Só para as músicas tocadas aqui</div></div>
         <div class="spacer"></div>
         <label class="switch"><input type="checkbox" id="eqOn" checked><span></span></label>
       </div>
-
-      <div class="presets" id="presets" style="margin-top:16px"></div>
-      <div class="bands" id="bands"></div>
-
-      <div class="extra">
-        <div>
-          <div class="lbl"><span>Reforço de grave</span><b id="bassVal">0 dB</b></div>
-          <input type="range" id="bass" min="0" max="12" step="1" value="0">
-        </div>
-        <div>
-          <div class="lbl"><span>Proteção contra distorção</span><label class="switch"><input type="checkbox" id="limiter" checked><span></span></label></div>
-          <div class="muted">Evita que o som estoure quando o grave e o volume estão altos.</div>
-        </div>
-      </div>
-    </div>
-    <div class="card muted">
-      O equalizador vale para as músicas que você toca <b>dentro deste app</b>. O Android não deixa um app mudar o som de outros apps, como o Spotify ou o YouTube.
-    </div>
-  </section>
-
-  <!-- CONEXÃO -->
-  <section class="tab" id="tab-conn">
-    <div class="card">
-      <div class="device">
-        <div class="ico"><svg viewBox="0 0 24 24"><path d="M17.7 7.7 12 2h-1v7.6L6.4 5 5 6.4l5.6 5.6L5 17.6 6.4 19l4.6-4.6V22h1l5.7-5.7-4.3-4.3 4.3-4.3zM13 5.8l1.9 1.9L13 9.6V5.8zm1.9 10.5L13 18.2v-3.8l1.9 1.9z"/></svg></div>
-        <div>
-          <div class="nm" id="devName">Nenhuma caixa conectada</div>
-          <div class="muted" id="devState">Toque em Conectar para procurar sua Aiwa</div>
-        </div>
-      </div>
-      <div class="battery" id="battery">
-        <div class="row"><span class="muted">Bateria da caixa</span><div class="spacer"></div><b id="batVal">–</b></div>
-        <div class="bar"><i id="batBar"></i></div>
-      </div>
-      <div class="row" style="margin-top:16px;gap:10px">
-        <button class="btn primary" id="btnConnect" style="flex:1">Conectar</button>
-        <button class="btn ghost hidden" id="btnDisconnect">Desconectar</button>
-      </div>
-      <div class="log" id="connLog"></div>
-      <div class="muted hidden" id="noBt" style="margin-top:8px">Este navegador não tem acesso ao Bluetooth. Abra o app no <b>Chrome</b> do Android.</div>
-    </div>
-
-    <div class="card">
-      <div class="toggle-row">
-        <div><b>Reconectar sozinho</b><div class="muted">Tenta voltar a conectar se a caixa cair</div></div>
-        <div class="spacer"></div>
-        <label class="switch"><input type="checkbox" id="autoRe" checked><span></span></label>
-      </div>
-      <div class="toggle-row">
-        <div><b>Manter tela ligada</b><div class="muted">Ajuda a música não parar enquanto o app está aberto</div></div>
-        <div class="spacer"></div>
-        <label class="switch"><input type="checkbox" id="wake"><span></span></label>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>Som cortando ou caindo?</h2>
-      <ol class="steps">
-        <li>Deixe o celular a até <b>5 metros</b> da caixa, sem paredes no meio.</li>
-        <li>No Android, vá em <b>Configurações › Bluetooth</b>, toque na engrenagem da Aiwa e escolha <b>Esquecer</b>. Depois pareie de novo.</li>
-        <li>Desconecte outros aparelhos Bluetooth (relógio, fone) enquanto usa a caixa.</li>
-        <li>Em <b>Configurações › Apps › Chrome › Bateria</b>, escolha <b>Sem restrições</b> para a música não parar com a tela apagada.</li>
-        <li>Se a caixa estiver com bateria fraca, ligue na tomada: a conexão fica mais estável.</li>
-      </ol>
-      <p class="muted" style="margin-bottom:0">Se sua caixa não aparecer na busca deste app, tudo bem: ela só usa o Bluetooth comum. Pareie pelas configurações do Android e o som toca normalmente.</p>
+      <div class="chips scroll" id="presets"></div>
+      <div class="pbands" id="bands"></div>
+      <div class="lbl"><span>Proteção contra distorção</span><label class="switch"><input type="checkbox" id="limiter" checked><span></span></label></div>
     </div>
   </section>
 </div>
 
 <nav class="bottom">
   <div class="in">
-    <button class="active" data-tab="player"><svg viewBox="0 0 24 24"><path d="M12 3v10.6A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>Player</button>
-    <button data-tab="eq"><svg viewBox="0 0 24 24"><path d="M10 20h4V4h-4v16zm-6 0h4v-8H4v8zM16 9v11h4V9h-4z"/></svg>Equalizador</button>
-    <button data-tab="conn"><svg viewBox="0 0 24 24"><path d="M17.7 7.7 12 2h-1v7.6L6.4 5 5 6.4l5.6 5.6L5 17.6 6.4 19l4.6-4.6V22h1l5.7-5.7-4.3-4.3 4.3-4.3zM13 5.8l1.9 1.9L13 9.6V5.8zm1.9 10.5L13 18.2v-3.8l1.9 1.9z"/></svg>Conexão</button>
+    <button class="active" data-tab="caixa"><svg viewBox="0 0 24 24"><path d="M4 7h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2zm3.5 3a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zm9 0a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zM8 3h8v2H8z"/></svg>Caixa</button>
+    <button data-tab="som"><svg viewBox="0 0 24 24"><path d="M10 20h4V4h-4v16zm-6 0h4v-8H4v8zM16 9v11h4V9h-4z"/></svg>Som</button>
+    <button data-tab="luzes"><svg viewBox="0 0 24 24"><path d="M9 21h6v-1H9v1zm3-19a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>Luzes</button>
+    <button data-tab="player"><svg viewBox="0 0 24 24"><path d="M12 3v10.6A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>Player</button>
   </div>
 </nav>
 <div class="toast" id="toast"></div>
@@ -280,8 +410,8 @@
 (() => {
   const $ = id => document.getElementById(id);
   const store = {
-    get(k, d) { try { const v = localStorage.getItem('bb.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
-    set(k, v) { try { localStorage.setItem('bb.' + k, JSON.stringify(v)); } catch {} }
+    get(k, d) { try { const v = localStorage.getItem('guri.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem('guri.' + k, JSON.stringify(v)); } catch {} }
   };
   let toastTimer;
   function toast(msg) {
@@ -294,330 +424,198 @@
     document.querySelectorAll('nav.bottom button').forEach(x => x.classList.toggle('active', x === b));
     document.querySelectorAll('section.tab').forEach(s => s.classList.toggle('active', s.id === 'tab-' + b.dataset.tab));
     window.scrollTo(0, 0);
+    if (b.dataset.tab === 'player') sizeCanvas();
   }));
 
-  /* ---------- Áudio + Equalizador ---------- */
-  const audio = $('audio');
-  const BANDS = [
-    { f: 60, label: '60', type: 'lowshelf' },
-    { f: 150, label: '150', type: 'peaking' },
-    { f: 400, label: '400', type: 'peaking' },
-    { f: 1000, label: '1k', type: 'peaking' },
-    { f: 2400, label: '2.4k', type: 'peaking' },
-    { f: 6000, label: '6k', type: 'peaking' },
-    { f: 15000, label: '15k', type: 'highshelf' }
+  /* =====================================================================
+     PROTOCOLO DA AIWA (lido do app oficial "AIWA BR AUDIO")
+     A caixa fala Bluetooth LE. Existem dois "dialetos":
+       - antigo: um serviço por função (AE58, AE0B, AE40) + luzes da Boombox LED (AF10..AF24)
+       - novo:   tudo num canal só (serviço AE0A, característica AE01), primeiro byte = comando
+     O app descobre qual a caixa tem e usa o certo.
+     ===================================================================== */
+  const U = h => `0000${h.toLowerCase()}-0000-1000-8000-00805f9b34fb`;
+  const ALL_SERVICES = ['AE50', 'AE58', 'AE0B', 'AE40', 'AE0A', 'AF10', 'AF15', 'AF20', 'AF24', '180F'].map(U);
+  const COLORS = [
+    { name: 'Verde', rgb: '0,255,0' }, { name: 'Amarelo', rgb: '255,255,0' }, { name: 'Vermelho', rgb: '255,0,0' },
+    { name: 'Roxo', rgb: '156,0,255' }, { name: 'Azul', rgb: '0,0,255' }
   ];
-  const PRESETS = {
-    'Normal':      [0, 0, 0, 0, 0, 0, 0],
-    'Grave forte': [8, 6, 2, 0, 0, 0, 1],
-    'Funk':        [8, 6, 1, -1, 0, 2, 3],
-    'Festa':       [6, 4, 0, -1, 1, 3, 4],
-    'Rock':        [4, 2, -1, -2, 1, 3, 4],
-    'Pop':         [-1, 1, 3, 3, 1, -1, -1],
-    'Sertanejo':   [3, 2, 0, 1, 2, 2, 1],
-    'Voz':         [-3, -1, 1, 3, 4, 2, 0],
-    'Agudo':       [0, 0, 0, 1, 3, 5, 6]
+  const SPK_PRESETS = [   // valores mostrados nas barras (-9 a +9), iguais aos do app oficial
+    { name: 'AIWA', v: 0, levels: [0, 0, 0, 0, 0] },
+    { name: 'Rock', v: 1, levels: [-2, 0, -3, 1, 2] },
+    { name: 'Pop', v: 2, levels: [-4, 2, 0, 2, 3] },
+    { name: 'Intenso', v: 3, levels: [-6, 0, 0, 1, 4] },
+    { name: 'Clássico', v: 4, levels: [-4, -2, 0, 0, 5] },
+    { name: 'Jazz', v: 5, levels: [0, -4, -2, 2, 6] },
+    { name: 'Personalizado', v: 6, levels: null }
+  ];
+  const DJ = [{ n: 'DJ 1', v: 0 }, { n: 'DJ 2', v: 1 }, { n: 'DJ 3', v: 2 }, { n: 'SCRATCH 1', v: 3 }, { n: 'SCRATCH 2', v: 4 }, { n: 'SCRATCH 3', v: 5 }];
+  const TIMES = [15, 30, 45, 60, 90, 120];
+
+  // Estado da caixa (lembrado entre usos)
+  const spk = {
+    preset: store.get('spk.preset', 0),
+    levels: store.get('spk.levels', [0, 0, 0, 0, 0]),
+    boost: store.get('spk.boost', false),
+    lights: store.get('spk.lights', true),
+    intensity: store.get('spk.intensity', 100),
+    colors: store.get('spk.colors', [true, true, true, true, true]),
+    sync: store.get('spk.sync', true),
+    strobe: false, speed: 3, ledMode: 0,
+    source: 0, usbMode: 0, playing: false
   };
+  const saveSpk = () => ['preset', 'levels', 'boost', 'lights', 'intensity', 'colors', 'sync'].forEach(k => store.set('spk.' + k, spk[k]));
 
-  let eqGains = store.get('eq', PRESETS['Normal'].slice());
-  let preset = store.get('preset', 'Normal');
-  let eqOn = store.get('eqOn', true);
-  let bassBoost = store.get('bass', 0);
-  let limiterOn = store.get('limiter', true);
-  let volume = store.get('vol', 90);
-
-  let ctx, filters = [], bassNode, preGain, volGain, limiter, analyser, sourceNode;
-
-  function buildGraph() {
-    if (ctx) return;
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return;
-    ctx = new AC({ latencyHint: 'playback' });
-    sourceNode = ctx.createMediaElementSource(audio);
-    filters = BANDS.map(b => {
-      const n = ctx.createBiquadFilter();
-      n.type = b.type; n.frequency.value = b.f; n.Q.value = 1.1;
-      return n;
-    });
-    bassNode = ctx.createBiquadFilter();
-    bassNode.type = 'lowshelf'; bassNode.frequency.value = 90;
-    preGain = ctx.createGain();     // baixa o sinal quando há reforço, para não distorcer
-    volGain = ctx.createGain();
-    limiter = ctx.createDynamicsCompressor();
-    limiter.threshold.value = -3; limiter.knee.value = 4; limiter.ratio.value = 20;
-    limiter.attack.value = 0.003; limiter.release.value = 0.15;
-    analyser = ctx.createAnalyser(); analyser.fftSize = 256; analyser.smoothingTimeConstant = 0.8;
-
-    let node = sourceNode;
-    [...filters, bassNode, preGain, volGain].forEach(n => { node.connect(n); node = n; });
-    routeOutput();
-    applyEq(); applyVolume();
-  }
-
-  function routeOutput() {
-    if (!ctx) return;
-    try { limiter.disconnect(); } catch {}
-    try { volGain.disconnect(); } catch {}
-    if (limiterOn) { volGain.connect(limiter); limiter.connect(analyser); }
-    else volGain.connect(analyser);
-    analyser.connect(ctx.destination);
-  }
-
-  function applyEq() {
-    if (!ctx) return;
-    const t = ctx.currentTime;
-    filters.forEach((n, i) => n.gain.setTargetAtTime(eqOn ? eqGains[i] : 0, t, 0.03));
-    bassNode.gain.setTargetAtTime(eqOn ? bassBoost : 0, t, 0.03);
-    const peak = eqOn ? Math.max(0, ...eqGains, bassBoost + Math.max(0, eqGains[0])) : 0;
-    preGain.gain.setTargetAtTime(Math.pow(10, -peak * 0.5 / 20), t, 0.05);
-  }
-  function applyVolume() {
-    if (ctx) volGain.gain.setTargetAtTime(Math.pow(volume / 100, 2), ctx.currentTime, 0.03);
-    else audio.volume = volume / 100;
-  }
-
-  // Monta a tela do equalizador
-  const bandsEl = $('bands');
-  BANDS.forEach((b, i) => {
-    const d = document.createElement('div');
-    d.className = 'band';
-    d.innerHTML = `<span class="db" id="db${i}"></span>
-      <input type="range" min="-12" max="12" step="1" value="${eqGains[i]}" aria-label="${b.label} Hz" data-i="${i}">
-      <label>${b.label}</label>`;
-    bandsEl.appendChild(d);
-  });
-  function fmtDb(v) { return (v > 0 ? '+' : '') + v; }
-  function renderEq() {
-    bandsEl.querySelectorAll('input').forEach((inp, i) => { inp.value = eqGains[i]; $('db' + i).textContent = fmtDb(eqGains[i]); });
-    document.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c.dataset.p === preset));
-    $('eqCard').classList.toggle('eq-off', !eqOn);
-    $('eqOn').checked = eqOn;
-    $('bass').value = bassBoost; $('bassVal').textContent = (bassBoost ? '+' : '') + bassBoost + ' dB';
-    $('limiter').checked = limiterOn;
-    const custom = document.querySelector('[data-p="Personalizado"]');
-    if (custom) custom.classList.toggle('hidden', preset !== 'Personalizado');
-  }
-  bandsEl.addEventListener('input', e => {
-    const i = +e.target.dataset.i; if (isNaN(i)) return;
-    eqGains[i] = +e.target.value;
-    preset = Object.keys(PRESETS).find(k => PRESETS[k].every((v, j) => v === eqGains[j])) || 'Personalizado';
-    store.set('eq', eqGains); store.set('preset', preset);
-    renderEq(); applyEq();
-  });
-  const presetsEl = $('presets');
-  [...Object.keys(PRESETS), 'Personalizado'].forEach(name => {
-    const c = document.createElement('button');
-    c.className = 'chip'; c.textContent = name; c.dataset.p = name;
-    if (name === 'Personalizado') c.classList.add('hidden');
-    c.addEventListener('click', () => {
-      if (!PRESETS[name]) return;
-      preset = name; eqGains = PRESETS[name].slice();
-      store.set('eq', eqGains); store.set('preset', preset);
-      renderEq(); applyEq();
-    });
-    presetsEl.appendChild(c);
-  });
-  $('eqOn').addEventListener('change', e => { eqOn = e.target.checked; store.set('eqOn', eqOn); renderEq(); applyEq(); });
-  $('bass').addEventListener('input', e => { bassBoost = +e.target.value; store.set('bass', bassBoost); renderEq(); applyEq(); });
-  $('limiter').addEventListener('change', e => { limiterOn = e.target.checked; store.set('limiter', limiterOn); routeOutput(); });
-  $('volume').value = volume;
-  $('volume').addEventListener('input', e => { volume = +e.target.value; store.set('vol', volume); applyVolume(); });
-  renderEq(); applyVolume();
-
-  /* ---------- Lista de músicas (salva no celular) ---------- */
-  let db;
-  const dbReady = new Promise(res => {
-    try {
-      const r = indexedDB.open('boombox', 1);
-      r.onupgradeneeded = () => r.result.createObjectStore('tracks', { keyPath: 'id', autoIncrement: true });
-      r.onsuccess = () => { db = r.result; res(); };
-      r.onerror = () => res();
-    } catch { res(); }
-  });
-  function tx(mode) { return db.transaction('tracks', mode).objectStore('tracks'); }
-  function dbAll() { return new Promise(res => { if (!db) return res([]); const r = tx('readonly').getAll(); r.onsuccess = () => res(r.result); r.onerror = () => res([]); }); }
-  function dbAdd(t) { return new Promise(res => { if (!db) return res(null); const r = tx('readwrite').add(t); r.onsuccess = () => res(r.result); r.onerror = () => res(null); }); }
-  function dbDel(id) { if (db && id != null) try { tx('readwrite').delete(id); } catch {} }
-  function dbClear() { if (db) try { tx('readwrite').clear(); } catch {} }
-
-  let tracks = [];   // { id, name, blob, url }
-  let cur = -1;
-
-  function cleanName(n) { return n.replace(/\.[^.]+$/, '').replace(/[_]+/g, ' ').trim(); }
-  function renderList() {
-    const ul = $('playlist'); ul.innerHTML = '';
-    tracks.forEach((t, i) => {
-      const li = document.createElement('li');
-      if (i === cur) li.className = 'playing';
-      li.innerHTML = `<span class="n">${i === cur && !audio.paused ? '♪' : i + 1}</span><span class="name"></span><button class="x" aria-label="Remover">×</button>`;
-      li.querySelector('.name').textContent = t.name;
-      li.addEventListener('click', e => { if (e.target.classList.contains('x')) return; play(i); });
-      li.querySelector('.x').addEventListener('click', () => removeTrack(i));
-      ul.appendChild(li);
-    });
-    $('emptyList').classList.toggle('hidden', tracks.length > 0);
-    $('btnClear').classList.toggle('hidden', tracks.length === 0);
-  }
-  function removeTrack(i) {
-    const t = tracks[i];
-    dbDel(t.id); if (t.url) URL.revokeObjectURL(t.url);
-    tracks.splice(i, 1);
-    if (i === cur) { audio.pause(); audio.removeAttribute('src'); cur = -1; showNow(); }
-    else if (i < cur) cur--;
-    renderList();
-  }
-
-  $('btnAdd').addEventListener('click', () => $('filePick').click());
-  $('filePick').addEventListener('change', async e => {
-    const files = [...e.target.files]; e.target.value = '';
-    await dbReady;
-    for (const f of files) {
-      const t = { name: cleanName(f.name), blob: f };
-      t.id = await dbAdd({ name: t.name, blob: f });
-      tracks.push(t);
-    }
-    renderList();
-    toast(files.length === 1 ? 'Música adicionada' : files.length + ' músicas adicionadas');
-    if (cur === -1 && tracks.length) load(0);
-  });
-  $('btnClear').addEventListener('click', () => {
-    if (!confirm('Remover todas as músicas da lista?')) return;
-    audio.pause(); audio.removeAttribute('src');
-    tracks.forEach(t => t.url && URL.revokeObjectURL(t.url));
-    tracks = []; cur = -1; dbClear(); renderList(); showNow();
-  });
-
-  dbReady.then(dbAll).then(saved => {
-    tracks = saved.map(s => ({ id: s.id, name: s.name, blob: s.blob }));
-    renderList();
-    if (tracks.length) load(Math.min(store.get('cur', 0), tracks.length - 1));
-  });
-
-  /* ---------- Player ---------- */
-  function showNow() {
-    const t = tracks[cur];
-    $('trackTitle').textContent = t ? t.name : 'Nenhuma música';
-    $('trackSub').textContent = t ? `Faixa ${cur + 1} de ${tracks.length}` : 'Adicione músicas do seu celular';
-    if ('mediaSession' in navigator) {
-      navigator.mediaSession.metadata = t ? new MediaMetadata({
-        title: t.name, artist: 'Boombox', artwork: [{ src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' }]
-      }) : null;
-    }
-  }
-  function load(i) {
-    if (!tracks[i]) return;
-    cur = i; store.set('cur', i);
-    const t = tracks[i];
-    if (!t.url) t.url = URL.createObjectURL(t.blob);
-    audio.src = t.url;
-    showNow(); renderList();
-  }
-  async function play(i) {
-    buildGraph();
-    if (ctx && ctx.state === 'suspended') await ctx.resume();
-    if (i !== undefined && i !== cur) load(i);
-    if (cur === -1) { if (!tracks.length) { toast('Adicione músicas primeiro'); return; } load(0); }
-    try { await audio.play(); } catch (err) { toast('Não foi possível tocar este arquivo'); }
-  }
-  function next() { if (tracks.length) play((cur + 1) % tracks.length); }
-  function prev() {
-    if (!tracks.length) return;
-    if (audio.currentTime > 3) { audio.currentTime = 0; return; }
-    play((cur - 1 + tracks.length) % tracks.length);
-  }
-  $('btnPlay').addEventListener('click', () => audio.paused ? play() : audio.pause());
-  $('btnNext').addEventListener('click', next);
-  $('btnPrev').addEventListener('click', prev);
-  audio.addEventListener('ended', next);
-  audio.addEventListener('error', () => { if (audio.getAttribute('src')) toast('Formato de arquivo não suportado'); });
-
-  const PLAY = '<path d="M8 5v14l11-7z"/>', PAUSE = '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
-  function syncPlayState() {
-    $('playIcon').innerHTML = audio.paused ? PLAY : PAUSE;
-    $('btnPlay').setAttribute('aria-label', audio.paused ? 'Tocar' : 'Pausar');
-    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = audio.paused ? 'paused' : 'playing';
-    renderList();
-  }
-  audio.addEventListener('play', syncPlayState);
-  audio.addEventListener('pause', syncPlayState);
-
-  function fmt(s) { if (!isFinite(s)) return '0:00'; s = Math.floor(s); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
-  let seeking = false;
-  audio.addEventListener('timeupdate', () => {
-    if (!seeking && audio.duration) $('seek').value = audio.currentTime / audio.duration * 1000;
-    $('tCur').textContent = fmt(audio.currentTime);
-    if ('mediaSession' in navigator && audio.duration && navigator.mediaSession.setPositionState) {
-      try { navigator.mediaSession.setPositionState({ duration: audio.duration, position: audio.currentTime, playbackRate: 1 }); } catch {}
-    }
-  });
-  audio.addEventListener('loadedmetadata', () => { $('tDur').textContent = fmt(audio.duration); });
-  $('seek').addEventListener('input', () => { seeking = true; if (audio.duration) $('tCur').textContent = fmt($('seek').value / 1000 * audio.duration); });
-  $('seek').addEventListener('change', () => { if (audio.duration) audio.currentTime = $('seek').value / 1000 * audio.duration; seeking = false; });
-
-  // Controles na tela de bloqueio e nos botões da caixa (play/pause/próxima)
-  if ('mediaSession' in navigator) {
-    const ms = navigator.mediaSession;
-    const set = (a, f) => { try { ms.setActionHandler(a, f); } catch {} };
-    set('play', () => play());
-    set('pause', () => audio.pause());
-    set('nexttrack', next);
-    set('previoustrack', prev);
-    set('seekto', d => { if (d.seekTime != null) audio.currentTime = d.seekTime; });
-  }
-
-  /* ---------- Visualizador ---------- */
-  const cv = $('viz'), g = cv.getContext('2d');
-  function sizeCanvas() { const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1; cv.width = r.width * dpr; cv.height = r.height * dpr; }
-  sizeCanvas(); window.addEventListener('resize', sizeCanvas);
-  let freq;
-  function draw() {
-    requestAnimationFrame(draw);
-    if (document.hidden) return;
-    const W = cv.width, H = cv.height, N = 40;
-    g.clearRect(0, 0, W, H);
-    if (analyser) { freq = freq || new Uint8Array(analyser.frequencyBinCount); analyser.getByteFrequencyData(freq); }
-    const bw = W / N;
-    for (let i = 0; i < N; i++) {
-      let v = 0;
-      if (freq && !audio.paused) v = freq[Math.floor(Math.pow(i / N, 1.6) * (freq.length * 0.85))] / 255;
-      const h = Math.max(4 * (window.devicePixelRatio || 1), v * H * 0.62);
-      g.fillStyle = `rgba(255, ${90 + v * 90}, 31, ${0.25 + v * 0.75})`;
-      const x = i * bw + bw * 0.18, w = bw * 0.64;
-      g.beginPath();
-      g.roundRect ? g.roundRect(x, H * 0.66 - h, w, h, w / 2) : g.rect(x, H * 0.66 - h, w, h);
-      g.fill();
-    }
-  }
-  draw();
-
-  /* ---------- Conexão Bluetooth ---------- */
-  let device = null, wantConnected = false, retry = 0, retryTimer;
+  let device = null, server = null, proto = { old: false, neu: false, lbl: false }, chars = {};
+  let wantConnected = false, retry = 0, retryTimer, queue = Promise.resolve();
   const hasBt = 'bluetooth' in navigator;
-  if (!hasBt) { $('noBt').classList.remove('hidden'); $('btnConnect').disabled = true; }
 
-  function setStatus(state, name) {
-    const dot = $('statusDot');
-    dot.className = 'dot' + (state === 'ok' ? ' ok' : state === 'wait' ? ' warn' : state === 'lost' ? ' bad' : '');
-    const label = { ok: name || 'Conectada', wait: 'Conectando…', lost: 'Conexão caiu', off: 'Sem caixa' }[state];
-    $('statusText').textContent = label;
-    $('devName').textContent = device ? (device.name || 'Caixa Bluetooth') : 'Nenhuma caixa conectada';
+  async function getChar(svc, ch) {
+    const key = svc + '/' + ch;
+    if (chars[key]) return chars[key];
+    const s = await server.getPrimaryService(U(svc));
+    return (chars[key] = await s.getCharacteristic(U(ch)));
+  }
+  // Fila: o Bluetooth só aceita um comando por vez
+  function run(fn) { queue = queue.then(fn).catch(err => console.warn('BLE', err)); return queue; }
+  function write(svc, ch, bytes) {
+    if (!server || !server.connected) return Promise.resolve();
+    return run(async () => {
+      const c = await getChar(svc, ch);
+      const v = new Uint8Array(bytes);
+      if (c.properties.write) await c.writeValueWithResponse(v);
+      else await c.writeValueWithoutResponse(v);
+    });
+  }
+  function read(svc, ch) {
+    return new Promise(res => run(async () => {
+      try { const v = await (await getChar(svc, ch)).readValue(); res(new Uint8Array(v.buffer)); } catch { res(null); }
+    }));
+  }
+  function notify(svc, ch, cb) {
+    return run(async () => {
+      const c = await getChar(svc, ch);
+      if (!(c.properties.notify || c.properties.indicate)) return;
+      c.addEventListener('characteristicvaluechanged', e => cb(new Uint8Array(e.target.value.buffer)));
+      await c.startNotifications();
+    });
+  }
+  const cmd = (...b) => write('AE0A', 'AE01', b);   // dialeto novo
+
+  // ----- Comandos (cada um escolhe o dialeto certo) -----
+  const S = {
+    preset(v) { if (proto.neu) cmd(10, v); else if (proto.old) write('AE58', 'AE63', [v]); },
+    band(i, level) {                     // i: 0..4, level: -9..+9
+      const b = [i + 1, level > 0 ? 1 : 0, Math.abs(level)];
+      if (proto.neu) cmd(11, ...b); else if (proto.old) write('AE0B', 'AE21', b);
+    },
+    boost(on) { if (proto.neu) cmd(1, on ? 1 : 0); else if (proto.old) write('AE0B', 'AE0C', [on ? 1 : 0]); },
+    dj(v) { if (proto.neu) cmd(12, v); else if (proto.old) write('AE40', 'AE41', [v]); },
+    timer(min) { if (proto.neu) cmd(21, min); else if (proto.old) write('AE40', 'AE45', [min]); },
+    lights(on) { if (proto.lbl) write('AF24', 'AF25', [on ? 0 : 1]); else if (proto.neu) cmd(6, on ? 1 : 0); },
+    intensity(v) { if (proto.lbl) write('AF24', 'AF26', [v]); else if (proto.neu) cmd(15, v); },
+    color(i, on) { if (proto.lbl) write('AF10', 'AF12', [i + 1, on ? 0 : 1]); else if (proto.neu) cmd(26, i, on ? 1 : 0); },
+    sync(on) { if (proto.lbl) write('AF10', 'AF11', [on ? 0 : 1]); else if (proto.neu) cmd(7, on ? 1 : 0); },
+    source(v) { if (proto.lbl) write('AF20', 'AF21', [v]); else if (proto.neu) cmd(17, v); },
+    play(on) { if (proto.lbl) write('AF15', 'AF16', [on ? 1 : 0]); else if (proto.neu) cmd(19, on ? 1 : 0); },
+    skip(dir) { if (proto.lbl) write('AF15', 'AF18', [dir]); else if (proto.neu) cmd(18, dir); },   // 0 = anterior, 1 = próxima
+    usbMode(v) { if (proto.lbl) write('AF15', 'AF17', [v]); else if (proto.neu) cmd(20, v); },
+    strobe(on) { if (proto.neu) cmd(5, on ? 1 : 0); },
+    speed(v) { if (proto.neu) cmd(16, v); },
+    ledMode(v) { if (proto.neu) cmd(13, v); },
+    rgb(r, g, b) { if (proto.neu) cmd(14, r, g, b); }
+  };
+  const bandCount = () => proto.neu ? 5 : 3;
+  const hasLights = () => proto.lbl || proto.neu;
+
+  /* ---------- Conexão ---------- */
+  function setStatus(state) {
+    $('statusDot').className = 'dot' + (state === 'ok' ? ' ok' : state === 'wait' ? ' warn' : state === 'lost' ? ' bad' : '');
+    const nm = device ? (device.name || 'Caixa Aiwa') : '';
+    $('statusText').textContent = { ok: nm || 'Conectada', wait: 'Conectando…', lost: 'Caiu', off: 'Sem caixa' }[state];
+    $('devName').textContent = device ? nm : 'Nenhuma caixa';
     $('devState').textContent = {
-      ok: 'Conectada e pronta', wait: 'Conectando…', lost: 'Conexão perdida', off: device ? 'Desconectada' : 'Toque em Conectar para procurar sua Aiwa'
+      ok: proto.old || proto.neu || proto.lbl ? 'Conectada e pronta' : 'Conectada, mas sem controles reconhecidos',
+      wait: 'Conectando…', lost: 'Conexão perdida', off: device ? 'Desconectada' : 'Toque em Conectar para achar sua Aiwa'
     }[state];
     $('btnConnect').classList.toggle('hidden', state === 'ok' || state === 'wait');
     $('btnConnect').textContent = device ? 'Conectar de novo' : 'Conectar';
     $('btnDisconnect').classList.toggle('hidden', !(state === 'ok' || state === 'wait'));
+    const ready = state === 'ok';
+    document.querySelectorAll('.needs-speaker').forEach(el => el.classList.toggle('off', !ready));
+    if (!ready) $('battery').classList.add('hidden');
   }
   const log = m => { $('connLog').textContent = m || ''; };
 
-  async function readBattery(server) {
-    try {
-      const svc = await server.getPrimaryService('battery_service');
-      const ch = await svc.getCharacteristic('battery_level');
-      const show = v => { $('battery').style.display = 'block'; $('batVal').textContent = v + '%'; $('batBar').style.width = v + '%'; $('batBar').style.background = v <= 20 ? 'var(--bad)' : v <= 40 ? 'var(--warn)' : 'var(--ok)'; };
-      show((await ch.readValue()).getUint8(0));
-      try { await ch.startNotifications(); ch.addEventListener('characteristicvaluechanged', e => show(e.target.value.getUint8(0))); } catch {}
-    } catch { $('battery').style.display = 'none'; }
+  function showBattery(raw) {
+    // O app oficial usa níveis: 1=cheia … 4=pouca, 5=fraca, 6+=carregando. Se vier 0–100, é porcentagem.
+    let pct, txt = '';
+    if (raw > 20) pct = Math.min(100, raw);
+    else if (raw >= 6) { pct = 100; txt = 'carregando'; }
+    else pct = [0, 100, 75, 50, 25, 10][raw] ?? 0;
+    const b = $('battery'); b.classList.remove('hidden'); b.classList.toggle('low', pct <= 25);
+    b.querySelectorAll('.cells i').forEach((c, i) => c.classList.toggle('on', pct > i * 25));
+    $('batTxt').textContent = txt || (raw > 20 ? pct + '%' : '');
+  }
+
+  async function detect() {
+    proto = { old: false, neu: false, lbl: false };
+    const has = async id => { try { await server.getPrimaryService(U(id)); return true; } catch { return false; } };
+    proto.neu = await has('AE0A');
+    proto.old = !proto.neu && (await has('AE58') || await has('AE0B'));
+    proto.lbl = await has('AF24');
+  }
+
+  async function afterConnect() {
+    // Bateria (serviço padrão)
+    const bat = await read('180F', '2A19');
+    if (bat) showBattery(bat[0]);
+    notify('180F', '2A19', v => showBattery(v[0])).catch(() => {});
+
+    if (proto.old) {
+      const b = await read('AE0B', 'AE0D');
+      if (b) { spk.boost = b[0] === 1; renderSound(); }
+    }
+    if (proto.lbl) {
+      // Mesmo caminho do app oficial: lê AF14 e depois o estado completo em AF28
+      await read('AF10', 'AF14');
+      const st = await read('AF24', 'AF28');
+      if (st && st.length >= 7) {
+        spk.playing = st[0] === 1; spk.lights = st[1] === 0; spk.usbMode = st[3]; spk.source = st[5]; spk.intensity = st[6];
+      }
+      notify('AF24', 'AF27', v => { spk.playing = v[0] === 1; spk.lights = v[1] === 0; renderAll(); }).catch(() => {});
+    }
+    if (proto.neu) {
+      // No dialeto novo, a caixa avisa mudanças por notificação. Escuta tudo do serviço AE0A.
+      run(async () => {
+        const s = await server.getPrimaryService(U('AE0A'));
+        for (const c of await s.getCharacteristics()) {
+          if (!(c.properties.notify || c.properties.indicate)) continue;
+          c.addEventListener('characteristicvaluechanged', e => onNewNotify(new Uint8Array(e.target.value.buffer)));
+          await c.startNotifications();
+        }
+      });
+    }
+    // Reaplica o equalizador personalizado salvo, como o app oficial faz
+    if (spk.preset === 6) applyCustomEq();
+    renderAll();
+  }
+
+  function onNewNotify(t) {
+    switch (t[0]) {
+      case 6: spk.lights = t[1] === 1; break;
+      case 7: spk.sync = t[1] === 1; break;
+      case 13: spk.ledMode = t[1]; break;
+      case 15: spk.intensity = t[1]; break;
+      case 16: spk.speed = t[1]; break;
+      case 17: spk.source = t[1]; break;
+      case 19: spk.playing = t[1] === 1; break;
+      case 20: spk.usbMode = t[1]; break;
+      case 22: showBattery(t[1]); break;
+      case 26: if (t[1] < 5) spk.colors[t[1]] = t[2] === 1; break;
+      default: return;
+    }
+    renderAll();
   }
 
   async function connectGatt() {
@@ -625,15 +623,15 @@
     clearTimeout(retryTimer);
     setStatus('wait'); log('');
     try {
-      const server = await device.gatt.connect();
+      server = await device.gatt.connect();
+      chars = {}; queue = Promise.resolve();
+      await detect();
       retry = 0;
-      setStatus('ok', device.name);
-      log('');
       store.set('lastDevice', device.name || '');
-      readBattery(server);
-    } catch (err) {
-      scheduleRetry(err);
-    }
+      setStatus('ok');
+      if (!proto.old && !proto.neu && !proto.lbl) log('Essa caixa não respondeu aos comandos da Aiwa. Confira se escolheu a caixa certa na lista.');
+      await afterConnect();
+    } catch (err) { scheduleRetry(err); }
   }
   function scheduleRetry(err) {
     if (!wantConnected || !$('autoRe').checked || retry >= 6) {
@@ -641,16 +639,15 @@
       log(retry >= 6 ? 'Não conseguiu reconectar. Veja se a caixa está ligada e perto.' : (err ? 'Não conectou: ' + (err.message || err) : ''));
       return;
     }
-    const wait = Math.min(30, 2 ** retry) * 1000;   // 1s, 2s, 4s, 8s…
+    const wait = Math.min(30, 2 ** retry) * 1000;
     retry++;
     setStatus('lost');
     log(`Tentando de novo em ${wait / 1000}s (tentativa ${retry} de 6)…`);
     retryTimer = setTimeout(connectGatt, wait);
   }
   function onDisconnected() {
-    $('battery').style.display = 'none';
-    if (wantConnected) { toast('A caixa desconectou'); scheduleRetry(); }
-    else setStatus('off');
+    server = null;
+    if (wantConnected) { toast('A caixa desconectou'); scheduleRetry(); } else setStatus('off');
   }
   function useDevice(d) {
     if (device && device !== d) device.removeEventListener('gattserverdisconnected', onDisconnected);
@@ -658,55 +655,505 @@
     device.addEventListener('gattserverdisconnected', onDisconnected);
   }
 
+  if (!hasBt) { $('noBt').classList.remove('hidden'); $('btnConnect').disabled = true; }
   $('btnConnect').addEventListener('click', async () => {
     if (!hasBt) return;
     try {
       if (!device) {
-        const d = await navigator.bluetooth.requestDevice({
-          acceptAllDevices: true,
-          optionalServices: ['battery_service', 'device_information']
-        });
+        let d;
+        try {
+          d = await navigator.bluetooth.requestDevice({
+            filters: [{ namePrefix: 'AIWA' }, { namePrefix: 'Aiwa' }, { namePrefix: 'aiwa' }],
+            optionalServices: ALL_SERVICES
+          });
+        } catch (e) {
+          if (e.name !== 'NotFoundError') throw e;
+          // Não apareceu com o nome AIWA: mostra todos os aparelhos
+          if (!confirm('Nenhuma caixa com o nome AIWA apareceu. Quer ver todos os aparelhos Bluetooth por perto?')) return;
+          d = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ALL_SERVICES });
+        }
         useDevice(d);
       }
       wantConnected = true; retry = 0;
       await connectGatt();
     } catch (err) {
-      if (err && err.name === 'NotFoundError') log('Nenhuma caixa escolhida. Se a Aiwa não apareceu na lista, pareie pelo Bluetooth do Android: o som funciona do mesmo jeito.');
+      if (err && err.name === 'NotFoundError') log('Nenhuma caixa escolhida.');
       else log('Erro: ' + (err.message || err));
     }
   });
   $('btnDisconnect').addEventListener('click', () => {
     wantConnected = false; clearTimeout(retryTimer);
     if (device && device.gatt.connected) device.gatt.disconnect();
-    setStatus('off'); log('');
+    server = null; setStatus('off'); log('');
   });
   $('autoRe').checked = store.get('autoRe', true);
   $('autoRe').addEventListener('change', e => store.set('autoRe', e.target.checked));
-
-  // Lembra a caixa usada antes (quando o Chrome permite)
   if (hasBt && navigator.bluetooth.getDevices) {
     navigator.bluetooth.getDevices().then(list => {
       const last = store.get('lastDevice', null);
-      const d = list.find(x => x.name === last) || list[0];
+      const d = list.find(x => x.name === last);
       if (d) { useDevice(d); setStatus('off'); }
     }).catch(() => {});
   }
-  setStatus('off');
 
-  /* ---------- Manter tela ligada ---------- */
+  /* ---------- Tela: Som da caixa ---------- */
+  const BAND_NAMES3 = ['Grave', 'Médio', 'Agudo'];
+  const BAND_NAMES5 = ['Grave', 'Médio-grave', 'Médio', 'Médio-agudo', 'Agudo'];
+  let bandTimers = [];
+
+  function renderSound() {
+    const n = bandCount(), names = n === 5 ? BAND_NAMES5 : BAND_NAMES3;
+    const p = SPK_PRESETS.find(x => x.v === spk.preset) || SPK_PRESETS[0];
+    const lv = p.levels ? (n === 5 ? p.levels : [p.levels[0], p.levels[2], p.levels[4]]) : spk.levels.slice(0, n);
+    const box = $('spkBands');
+    if (box.children.length !== n) {
+      box.innerHTML = names.map((nm, i) => `<div class="band"><span class="db" id="sdb${i}"></span>
+        <input type="range" min="-9" max="9" step="1" data-i="${i}" aria-label="${nm}"><label>${nm}</label></div>`).join('');
+    }
+    box.querySelectorAll('input').forEach((inp, i) => { inp.value = lv[i]; $('sdb' + i).textContent = (lv[i] > 0 ? '+' : '') + lv[i]; });
+    document.querySelectorAll('#spkPresets .chip').forEach(c => c.classList.toggle('on', +c.dataset.v === spk.preset));
+    $('boost').checked = spk.boost;
+    renderMyPresets();
+  }
+  $('spkPresets').innerHTML = SPK_PRESETS.map(p => `<button class="chip" data-v="${p.v}">${p.name}</button>`).join('');
+  $('spkPresets').addEventListener('click', e => {
+    const c = e.target.closest('.chip'); if (!c) return;
+    spk.preset = +c.dataset.v; saveSpk(); renderSound();
+    if (spk.preset === 6) applyCustomEq(); else S.preset(spk.preset);
+  });
+  function applyCustomEq() {
+    S.preset(6);
+    for (let i = 0; i < bandCount(); i++) S.band(i, spk.levels[i]);
+  }
+  $('spkBands').addEventListener('input', e => {
+    const i = +e.target.dataset.i; if (isNaN(i)) return;
+    // Mexeu numa barra: vira personalizado, partindo dos valores que estavam na tela
+    if (spk.preset !== 6) {
+      $('spkBands').querySelectorAll('input').forEach((inp, j) => spk.levels[j] = +inp.value);
+      spk.preset = 6; S.preset(6);
+    }
+    spk.levels[i] = +e.target.value; saveSpk(); renderSound();
+    clearTimeout(bandTimers[i]);
+    bandTimers[i] = setTimeout(() => S.band(i, spk.levels[i]), 120);   // manda só quando o dedo para
+  });
+  $('boost').addEventListener('change', e => { spk.boost = e.target.checked; saveSpk(); S.boost(spk.boost); });
+
+  // Ajustes salvos pelo usuário
+  let myPresets = store.get('myPresets', []);
+  function renderMyPresets() {
+    $('myPresets').innerHTML = myPresets.map((p, i) => `<button class="chip" data-i="${i}">★ ${p.name}</button>`).join('');
+  }
+  $('myPresets').addEventListener('click', e => {
+    const c = e.target.closest('.chip'); if (!c) return;
+    const p = myPresets[+c.dataset.i];
+    spk.preset = 6; spk.levels = p.levels.slice(); spk.boost = p.boost;
+    saveSpk(); renderSound(); applyCustomEq(); S.boost(spk.boost);
+    toast('Ajuste "' + p.name + '" aplicado');
+  });
+  $('myPresets').addEventListener('contextmenu', e => {
+    const c = e.target.closest('.chip'); if (!c) return; e.preventDefault();
+    if (confirm('Apagar o ajuste "' + myPresets[+c.dataset.i].name + '"?')) { myPresets.splice(+c.dataset.i, 1); store.set('myPresets', myPresets); renderMyPresets(); }
+  });
+  $('savePreset').addEventListener('click', () => {
+    const name = (prompt('Nome do ajuste (ex.: Churrasco):') || '').trim();
+    if (!name) return;
+    const levels = [...$('spkBands').querySelectorAll('input')].map(i => +i.value);
+    while (levels.length < 5) levels.push(0);
+    myPresets.push({ name: name.slice(0, 20), levels, boost: spk.boost });
+    store.set('myPresets', myPresets); renderMyPresets(); toast('Ajuste salvo. Segure para apagar.');
+  });
+
+  $('pads').innerHTML = DJ.map(d => `<button class="pad" data-v="${d.v}">${d.n}</button>`).join('');
+  $('pads').addEventListener('click', e => {
+    const p = e.target.closest('.pad'); if (!p) return;
+    S.dj(+p.dataset.v);
+    p.classList.add('hit'); setTimeout(() => p.classList.remove('hit'), 2300);
+    if (navigator.vibrate) navigator.vibrate(30);
+  });
+
+  /* ---------- Tela: Caixa (controles, timer, cenas) ---------- */
+  const PLAY = '<path d="M8 5v14l11-7z"/>', PAUSE = '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
+  function renderCaixa() {
+    $('spkPlayIcon').innerHTML = spk.playing ? PAUSE : PLAY;
+    document.querySelectorAll('#source button').forEach(b => b.classList.toggle('on', +b.dataset.v === spk.source));
+    $('usbModes').classList.toggle('hidden', spk.source !== 1);
+    document.querySelectorAll('#usbModes .chip').forEach(b => b.classList.toggle('on', +b.dataset.v === spk.usbMode));
+    $('cardMedia').classList.toggle('hidden', !!server && !proto.lbl && !proto.neu);
+  }
+  $('spkPlay').addEventListener('click', () => { spk.playing = !spk.playing; S.play(spk.playing); renderCaixa(); });
+  $('spkPrev').addEventListener('click', () => S.skip(0));
+  $('spkNext').addEventListener('click', () => S.skip(1));
+  $('source').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; spk.source = +b.dataset.v; S.source(spk.source); renderCaixa(); });
+  $('usbModes').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; spk.usbMode = +b.dataset.v; S.usbMode(spk.usbMode); renderCaixa(); });
+
+  let timerEnd = store.get('timerEnd', 0), timerTick;
+  $('timer').innerHTML = TIMES.map(m => `<button class="chip" data-m="${m}">${m < 60 ? m + ' min' : m === 60 ? '1 hora' : m === 90 ? '1h30' : (m / 60) + ' horas'}</button>`).join('');
+  $('timer').addEventListener('click', e => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    const m = +b.dataset.m; S.timer(m);
+    timerEnd = Date.now() + m * 60000; store.set('timerEnd', timerEnd); tickTimer();
+    toast('A caixa desliga em ' + b.textContent);
+  });
+  function tickTimer() {
+    clearInterval(timerTick);
+    const upd = () => {
+      const left = timerEnd - Date.now();
+      if (left <= 0) { $('timerLeft').textContent = ''; clearInterval(timerTick); return; }
+      const m = Math.ceil(left / 60000);
+      $('timerLeft').textContent = `Desliga em ${m >= 60 ? Math.floor(m / 60) + 'h ' + (m % 60) + 'min' : m + ' min'}`;
+    };
+    upd(); timerTick = setInterval(upd, 15000);
+  }
+  if (timerEnd > Date.now()) tickTimer();
+
+  const SCENES = [
+    { e: '🔥', n: 'Festa', d: 'Intenso + BOOST + luzes no máximo', go() { setPreset(3); setBoost(true); setLights(true, 100, true); allColors(); } },
+    { e: '🍖', n: 'Churrasco', d: 'Pop + BOOST + luz média', go() { setPreset(2); setBoost(true); setLights(true, 60, true); } },
+    { e: '🛋️', n: 'Resenha', d: 'Som AIWA + luz fraca', go() { setPreset(0); setBoost(false); setLights(true, 25, false); } },
+    { e: '🌙', n: 'Dormir', d: 'Luzes apagadas + desliga em 30 min', go() { setBoost(false); setLights(false); S.timer(30); timerEnd = Date.now() + 1800000; store.set('timerEnd', timerEnd); tickTimer(); } }
+  ];
+  $('scenes').innerHTML = SCENES.map((s, i) => `<button class="scene" data-i="${i}"><span class="e">${s.e}</span><b>${s.n}</b><small>${s.d}</small></button>`).join('');
+  $('scenes').addEventListener('click', e => {
+    const b = e.target.closest('.scene'); if (!b) return;
+    const s = SCENES[+b.dataset.i]; s.go(); renderAll(); toast('Cena ' + s.n + ' ativada');
+  });
+  function setPreset(v) { spk.preset = v; S.preset(v); saveSpk(); }
+  function setBoost(on) { spk.boost = on; S.boost(on); saveSpk(); }
+  function setLights(on, intensity, sync) {
+    spk.lights = on; S.lights(on);
+    if (on && intensity != null) { spk.intensity = intensity; S.intensity(intensity); }
+    if (sync != null) { spk.sync = sync; S.sync(sync); }
+    saveSpk();
+  }
+
+  /* ---------- Tela: Luzes ---------- */
+  $('colors').innerHTML = COLORS.map((c, i) => `<button class="color" data-i="${i}" style="background:rgb(${c.rgb});--c:rgb(${c.rgb})" aria-label="${c.name}"><i>${i + 1}</i></button>`).join('');
+  function renderLights() {
+    $('lightsOn').checked = spk.lights;
+    $('intensity').value = spk.intensity; $('intVal').textContent = spk.intensity + '%';
+    $('sync').checked = spk.sync;
+    document.querySelectorAll('#colors .color').forEach((c, i) => { c.classList.toggle('on', spk.colors[i]); c.classList.toggle('off', !spk.colors[i]); });
+    $('strobeRow').classList.toggle('hidden', !proto.neu);
+    $('speedBox').classList.toggle('hidden', !proto.neu);
+    $('ledModeBox').classList.toggle('hidden', !proto.neu);
+    $('rgbBox').classList.toggle('hidden', !proto.neu);
+    $('strobe').checked = spk.strobe; $('speed').value = spk.speed; $('speedVal').textContent = spk.speed;
+    document.querySelectorAll('#ledModes .chip').forEach(c => c.classList.toggle('on', +c.dataset.v === spk.ledMode));
+    // Desenho da caixa acompanha as cores ligadas
+    const on = COLORS.filter((c, i) => spk.colors[i]);
+    document.querySelectorAll('.boombox .led').forEach((el, i) => {
+      const c = on.length ? on[i % on.length] : null;
+      const show = spk.lights && c && server;
+      el.style.opacity = show ? Math.max(.25, spk.intensity / 100) : .08;
+      const col = c ? `rgb(${c.rgb})` : '#555';
+      if (el.getAttribute('fill') === 'none') el.setAttribute('stroke', col); else el.setAttribute('fill', col);
+    });
+  }
+  $('lightsOn').addEventListener('change', e => { spk.lights = e.target.checked; S.lights(spk.lights); saveSpk(); renderLights(); });
+  let intTimer;
+  $('intensity').addEventListener('input', e => {
+    spk.intensity = +e.target.value; $('intVal').textContent = spk.intensity + '%'; renderLights();
+    clearTimeout(intTimer); intTimer = setTimeout(() => { S.intensity(spk.intensity); saveSpk(); }, 120);
+  });
+  $('colors').addEventListener('click', e => {
+    const c = e.target.closest('.color'); if (!c) return;
+    const i = +c.dataset.i; spk.colors[i] = !spk.colors[i]; S.color(i, spk.colors[i]); saveSpk(); renderLights();
+  });
+  function allColors() { spk.colors = spk.colors.map((on, i) => { if (!on) S.color(i, true); return true; }); saveSpk(); }
+  $('allColors').addEventListener('click', () => { stopRotate(); allColors(); renderLights(); });
+  let rotTimer = null, rotIdx = 0;
+  function stopRotate() { clearInterval(rotTimer); rotTimer = null; $('rotateColors').classList.remove('on'); }
+  $('rotateColors').addEventListener('click', () => {
+    if (rotTimer) { stopRotate(); return; }
+    $('rotateColors').classList.add('on');
+    const step = () => {
+      rotIdx = (rotIdx + 1) % 5;
+      spk.colors.forEach((on, i) => { const want = i === rotIdx; if (on !== want) S.color(i, want); spk.colors[i] = want; });
+      renderLights();
+    };
+    step(); rotTimer = setInterval(step, 2500);
+  });
+  $('sync').addEventListener('change', e => { spk.sync = e.target.checked; S.sync(spk.sync); saveSpk(); });
+  $('strobe').addEventListener('change', e => { spk.strobe = e.target.checked; S.strobe(spk.strobe); });
+  $('speed').addEventListener('input', e => { spk.speed = +e.target.value; $('speedVal').textContent = spk.speed; S.speed(spk.speed); });
+  $('ledModes').innerHTML = [0, 1, 2, 3, 4, 5].map(v => `<button class="chip" data-v="${v}">Efeito ${v + 1}</button>`).join('');
+  $('ledModes').addEventListener('click', e => { const c = e.target.closest('.chip'); if (!c) return; spk.ledMode = +c.dataset.v; S.ledMode(spk.ledMode); renderLights(); });
+  let rgbTimer;
+  $('rgb').addEventListener('input', e => {
+    const h = e.target.value; clearTimeout(rgbTimer);
+    rgbTimer = setTimeout(() => S.rgb(parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)), 150);
+  });
+
+
+  /* ---------- Vinhetas dos Guri (tocam por cima da música) ---------- */
+  const VINHETAS = [
+    { f: 'e-us-guri', n: 'É us guri' }, { f: 'e-us-guri-grito', n: 'É us guri (grito)' },
+    { f: 'e-o-dj-dos-guri', n: 'É o DJ dos guri' }, { f: 'vamo-animar-gurizada', n: 'Vamo animar gurizada' },
+    { f: 'vamo-dale-no-grau', n: 'Vamo dale no grau' }, { f: 'ja-virou-rave', n: 'Já virou rave o bagulho' },
+    { f: 'a-galera-nao-ta-entendendo', n: 'A galera não tá entendendo nada' }, { f: 'agora-me-ferrei', n: 'Agora me ferrei' },
+    { f: 'fudeu-ne-guri', n: 'Fudeu né guri, meu Deus' }, { f: 'fodeback', n: 'Fodeback' }
+  ];
+  let vCtx, vGain, vCur = null, vVol = store.get('vvol', 100);
+  const vRaw = {}, vBuf = {};
+  VINHETAS.forEach(v => { vRaw[v.f] = fetch('sons/' + v.f + '.mp3').then(r => r.arrayBuffer()).catch(() => null); });  // baixa antes
+  function vContext() {
+    if (!vCtx) {
+      vCtx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
+      vGain = vCtx.createGain(); vGain.gain.value = vVol / 100; vGain.connect(vCtx.destination);
+    }
+    return vCtx;
+  }
+  async function vLoad(f) {
+    if (vBuf[f]) return vBuf[f];
+    let raw = await vRaw[f];
+    if (!raw) raw = await (await fetch('sons/' + f + '.mp3')).arrayBuffer();
+    return (vBuf[f] = await vContext().decodeAudioData(raw.slice(0)));
+  }
+  function vMark(f, dur) {
+    document.querySelectorAll('.vpad').forEach(b => {
+      const on = b.dataset.f === f;
+      b.classList.remove('on'); void b.offsetWidth;
+      if (on) { b.style.setProperty('--d', dur + 's'); b.classList.add('on'); }
+    });
+  }
+  function vStop() { if (vCur) { try { vCur.stop(); } catch {} vCur = null; } vMark(null); duckMusic(false); }
+  async function vPlay(f) {
+    const c = vContext(); if (c.state === 'suspended') await c.resume();
+    let buf; try { buf = await vLoad(f); } catch { toast('Não consegui carregar a vinheta'); return; }
+    if (vCur) { try { vCur.onended = null; vCur.stop(); } catch {} }
+    const src = c.createBufferSource(); src.buffer = buf; src.connect(vGain); src.start();
+    vCur = src; vMark(f, buf.duration); duckMusic(true);
+    src.onended = () => { if (vCur === src) { vCur = null; vMark(null); duckMusic(false); } };
+    if (navigator.vibrate) navigator.vibrate(25);
+  }
+  document.querySelectorAll('.vpads').forEach(box => {
+    box.innerHTML = VINHETAS.map(v => `<button class="vpad" data-f="${v.f}"><span>${v.n}</span></button>`).join('');
+    box.addEventListener('click', e => { const b = e.target.closest('.vpad'); if (b) vPlay(b.dataset.f); });
+  });
+  document.querySelectorAll('.vstop').forEach(b => b.addEventListener('click', vStop));
+  document.querySelectorAll('.vvol').forEach(inp => {
+    inp.value = vVol;
+    inp.addEventListener('input', e => {
+      vVol = +e.target.value; store.set('vvol', vVol);
+      if (vGain) vGain.gain.value = vVol / 100;
+      document.querySelectorAll('.vvol').forEach(o => { if (o !== e.target) o.value = vVol; });
+      document.querySelectorAll('.vvolTxt').forEach(t => t.textContent = vVol + '%');
+    });
+  });
+  document.querySelectorAll('.vvolTxt').forEach(t => t.textContent = vVol + '%');
+
+  function renderAll() { renderCaixa(); renderSound(); renderLights(); }
+  setStatus('off'); renderAll();
+
+  /* =====================================================================
+     PLAYER com equalizador do celular
+     ===================================================================== */
+  const audio = $('audio');
+  const BANDS = [
+    { f: 60, label: '60', type: 'lowshelf' }, { f: 150, label: '150', type: 'peaking' }, { f: 400, label: '400', type: 'peaking' },
+    { f: 1000, label: '1k', type: 'peaking' }, { f: 2400, label: '2.4k', type: 'peaking' }, { f: 6000, label: '6k', type: 'peaking' },
+    { f: 15000, label: '15k', type: 'highshelf' }
+  ];
+  const PRESETS = {
+    'Normal': [0, 0, 0, 0, 0, 0, 0], 'Grave forte': [8, 6, 2, 0, 0, 0, 1], 'Funk': [8, 6, 1, -1, 0, 2, 3],
+    'Festa': [6, 4, 0, -1, 1, 3, 4], 'Rock': [4, 2, -1, -2, 1, 3, 4], 'Pop': [-1, 1, 3, 3, 1, -1, -1],
+    'Sertanejo': [3, 2, 0, 1, 2, 2, 1], 'Voz': [-3, -1, 1, 3, 4, 2, 0]
+  };
+  let eqGains = store.get('eq', PRESETS['Normal'].slice());
+  let preset = store.get('preset', 'Normal');
+  let eqOn = store.get('eqOn', true);
+  let limiterOn = store.get('limiter', true);
+  let volume = store.get('vol', 90);
+  let ctx, filters = [], preGain, volGain, limiter, analyser;
+
+  function buildGraph() {
+    if (ctx) return;
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    ctx = new AC({ latencyHint: 'playback' });
+    const src = ctx.createMediaElementSource(audio);
+    filters = BANDS.map(b => { const n = ctx.createBiquadFilter(); n.type = b.type; n.frequency.value = b.f; n.Q.value = 1.1; return n; });
+    preGain = ctx.createGain(); volGain = ctx.createGain();
+    limiter = ctx.createDynamicsCompressor();
+    limiter.threshold.value = -3; limiter.knee.value = 4; limiter.ratio.value = 20; limiter.attack.value = 0.003; limiter.release.value = 0.15;
+    analyser = ctx.createAnalyser(); analyser.fftSize = 256; analyser.smoothingTimeConstant = 0.8;
+    let node = src; [...filters, preGain, volGain].forEach(n => { node.connect(n); node = n; });
+    routeOutput(); applyEq(); applyVolume();
+  }
+  function routeOutput() {
+    if (!ctx) return;
+    try { limiter.disconnect(); } catch {} try { volGain.disconnect(); } catch {}
+    if (limiterOn) { volGain.connect(limiter); limiter.connect(analyser); } else volGain.connect(analyser);
+    analyser.connect(ctx.destination);
+  }
+  function applyEq() {
+    if (!ctx) return; const t = ctx.currentTime;
+    filters.forEach((n, i) => n.gain.setTargetAtTime(eqOn ? eqGains[i] : 0, t, 0.03));
+    const peak = eqOn ? Math.max(0, ...eqGains) : 0;
+    preGain.gain.setTargetAtTime(Math.pow(10, -peak * 0.5 / 20), t, 0.05);
+  }
+  // Abaixa a música do player enquanto a vinheta toca
+  let ducked = false;
+  function duckMusic(on) {
+    ducked = on;
+    if (ctx) volGain.gain.setTargetAtTime(Math.pow(volume / 100, 2) * (on ? 0.35 : 1), ctx.currentTime, on ? 0.05 : 0.3);
+  }
+  function applyVolume() { if (ctx) volGain.gain.setTargetAtTime(Math.pow(volume / 100, 2) * (ducked ? 0.35 : 1), ctx.currentTime, 0.03); else audio.volume = volume / 100; }
+
+  const bandsEl = $('bands');
+  bandsEl.innerHTML = BANDS.map((b, i) => `<div class="band"><span class="db" id="db${i}"></span>
+    <input type="range" min="-12" max="12" step="1" data-i="${i}" aria-label="${b.label} Hz"><label>${b.label}</label></div>`).join('');
+  $('presets').innerHTML = [...Object.keys(PRESETS), 'Personalizado'].map(n => `<button class="chip" data-p="${n}">${n}</button>`).join('');
+  function renderEq() {
+    bandsEl.querySelectorAll('input').forEach((inp, i) => { inp.value = eqGains[i]; $('db' + i).textContent = (eqGains[i] > 0 ? '+' : '') + eqGains[i]; });
+    document.querySelectorAll('#presets .chip').forEach(c => { c.classList.toggle('on', c.dataset.p === preset); if (c.dataset.p === 'Personalizado') c.classList.toggle('hidden', preset !== 'Personalizado'); });
+    $('eqOn').checked = eqOn; $('limiter').checked = limiterOn;
+    bandsEl.style.opacity = $('presets').style.opacity = eqOn ? 1 : .4;
+  }
+  bandsEl.addEventListener('input', e => {
+    const i = +e.target.dataset.i; if (isNaN(i)) return;
+    eqGains[i] = +e.target.value;
+    preset = Object.keys(PRESETS).find(k => PRESETS[k].every((v, j) => v === eqGains[j])) || 'Personalizado';
+    store.set('eq', eqGains); store.set('preset', preset); renderEq(); applyEq();
+  });
+  $('presets').addEventListener('click', e => {
+    const c = e.target.closest('.chip'); if (!c || !PRESETS[c.dataset.p]) return;
+    preset = c.dataset.p; eqGains = PRESETS[preset].slice(); store.set('eq', eqGains); store.set('preset', preset); renderEq(); applyEq();
+  });
+  $('eqOn').addEventListener('change', e => { eqOn = e.target.checked; store.set('eqOn', eqOn); renderEq(); applyEq(); });
+  $('limiter').addEventListener('change', e => { limiterOn = e.target.checked; store.set('limiter', limiterOn); routeOutput(); });
+  $('volume').value = volume;
+  $('volume').addEventListener('input', e => { volume = +e.target.value; store.set('vol', volume); applyVolume(); });
+  renderEq(); applyVolume();
+
+  // Lista de músicas salva no celular (IndexedDB)
+  let db;
+  const dbReady = new Promise(res => {
+    try {
+      const r = indexedDB.open('boombox', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('tracks', { keyPath: 'id', autoIncrement: true });
+      r.onsuccess = () => { db = r.result; res(); }; r.onerror = () => res();
+    } catch { res(); }
+  });
+  const tx = mode => db.transaction('tracks', mode).objectStore('tracks');
+  const dbAll = () => new Promise(res => { if (!db) return res([]); const r = tx('readonly').getAll(); r.onsuccess = () => res(r.result); r.onerror = () => res([]); });
+  const dbAdd = t => new Promise(res => { if (!db) return res(null); const r = tx('readwrite').add(t); r.onsuccess = () => res(r.result); r.onerror = () => res(null); });
+  const dbDel = id => { if (db && id != null) try { tx('readwrite').delete(id); } catch {} };
+  const dbClear = () => { if (db) try { tx('readwrite').clear(); } catch {} };
+
+  let tracks = [], cur = -1;
+  const cleanName = n => n.replace(/\.[^.]+$/, '').replace(/_+/g, ' ').trim();
+  function renderList() {
+    const ul = $('playlist'); ul.innerHTML = '';
+    tracks.forEach((t, i) => {
+      const li = document.createElement('li');
+      if (i === cur) li.className = 'playing';
+      li.innerHTML = `<span class="n">${i === cur && !audio.paused ? '♪' : i + 1}</span><span class="name"></span><button class="x" aria-label="Remover">×</button>`;
+      li.querySelector('.name').textContent = t.name;
+      li.addEventListener('click', e => { if (!e.target.classList.contains('x')) play(i); });
+      li.querySelector('.x').addEventListener('click', () => removeTrack(i));
+      ul.appendChild(li);
+    });
+    $('emptyList').classList.toggle('hidden', tracks.length > 0);
+    $('btnClear').classList.toggle('hidden', tracks.length === 0);
+  }
+  function removeTrack(i) {
+    const t = tracks[i]; dbDel(t.id); if (t.url) URL.revokeObjectURL(t.url);
+    tracks.splice(i, 1);
+    if (i === cur) { audio.pause(); audio.removeAttribute('src'); cur = -1; showNow(); } else if (i < cur) cur--;
+    renderList();
+  }
+  $('btnAdd').addEventListener('click', () => $('filePick').click());
+  $('filePick').addEventListener('change', async e => {
+    const files = [...e.target.files]; e.target.value = ''; await dbReady;
+    for (const f of files) { const t = { name: cleanName(f.name), blob: f }; t.id = await dbAdd({ name: t.name, blob: f }); tracks.push(t); }
+    renderList(); toast(files.length === 1 ? 'Música adicionada' : files.length + ' músicas adicionadas');
+    if (cur === -1 && tracks.length) load(0);
+  });
+  $('btnClear').addEventListener('click', () => {
+    if (!confirm('Remover todas as músicas da lista?')) return;
+    audio.pause(); audio.removeAttribute('src'); tracks.forEach(t => t.url && URL.revokeObjectURL(t.url));
+    tracks = []; cur = -1; dbClear(); renderList(); showNow();
+  });
+  dbReady.then(dbAll).then(saved => {
+    tracks = saved.map(s => ({ id: s.id, name: s.name, blob: s.blob })); renderList();
+    if (tracks.length) load(Math.min(store.get('cur', 0), tracks.length - 1));
+  });
+
+  function showNow() {
+    const t = tracks[cur];
+    $('trackTitle').textContent = t ? t.name : 'Nenhuma música';
+    $('trackSub').textContent = t ? `Faixa ${cur + 1} de ${tracks.length}` : 'Toque músicas salvas no celular';
+    if ('mediaSession' in navigator) navigator.mediaSession.metadata = t ? new MediaMetadata({ title: t.name, artist: 'Aiwa dos Guri', artwork: [{ src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' }] }) : null;
+  }
+  function load(i) {
+    if (!tracks[i]) return; cur = i; store.set('cur', i);
+    const t = tracks[i]; if (!t.url) t.url = URL.createObjectURL(t.blob);
+    audio.src = t.url; showNow(); renderList();
+  }
+  async function play(i) {
+    buildGraph(); if (ctx && ctx.state === 'suspended') await ctx.resume();
+    if (i !== undefined && i !== cur) load(i);
+    if (cur === -1) { if (!tracks.length) { toast('Adicione músicas primeiro'); return; } load(0); }
+    try { await audio.play(); } catch { toast('Não foi possível tocar este arquivo'); }
+  }
+  const next = () => { if (tracks.length) play((cur + 1) % tracks.length); };
+  const prev = () => { if (!tracks.length) return; if (audio.currentTime > 3) { audio.currentTime = 0; return; } play((cur - 1 + tracks.length) % tracks.length); };
+  $('btnPlay').addEventListener('click', () => audio.paused ? play() : audio.pause());
+  $('btnNext').addEventListener('click', next);
+  $('btnPrev').addEventListener('click', prev);
+  audio.addEventListener('ended', next);
+  audio.addEventListener('error', () => { if (audio.getAttribute('src')) toast('Formato de arquivo não suportado'); });
+  function syncPlayState() {
+    $('playIcon').innerHTML = audio.paused ? PLAY : PAUSE;
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = audio.paused ? 'paused' : 'playing';
+    renderList();
+  }
+  audio.addEventListener('play', syncPlayState); audio.addEventListener('pause', syncPlayState);
+  const fmt = s => { if (!isFinite(s)) return '0:00'; s = Math.floor(s); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+  let seeking = false;
+  audio.addEventListener('timeupdate', () => {
+    if (!seeking && audio.duration) $('seek').value = audio.currentTime / audio.duration * 1000;
+    $('tCur').textContent = fmt(audio.currentTime);
+  });
+  audio.addEventListener('loadedmetadata', () => { $('tDur').textContent = fmt(audio.duration); });
+  $('seek').addEventListener('input', () => { seeking = true; if (audio.duration) $('tCur').textContent = fmt($('seek').value / 1000 * audio.duration); });
+  $('seek').addEventListener('change', () => { if (audio.duration) audio.currentTime = $('seek').value / 1000 * audio.duration; seeking = false; });
+  if ('mediaSession' in navigator) {
+    const set = (a, f) => { try { navigator.mediaSession.setActionHandler(a, f); } catch {} };
+    set('play', () => play()); set('pause', () => audio.pause()); set('nexttrack', next); set('previoustrack', prev);
+    set('seekto', d => { if (d.seekTime != null) audio.currentTime = d.seekTime; });
+  }
+
+  const cv = $('viz'), g = cv.getContext('2d');
+  function sizeCanvas() { const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1; if (r.width) { cv.width = r.width * dpr; cv.height = r.height * dpr; } }
+  sizeCanvas(); window.addEventListener('resize', sizeCanvas);
+  let freq;
+  (function draw() {
+    requestAnimationFrame(draw);
+    if (document.hidden || !$('tab-player').classList.contains('active')) return;
+    const W = cv.width, H = cv.height, N = 40, dpr = window.devicePixelRatio || 1;
+    g.clearRect(0, 0, W, H);
+    if (analyser) { freq = freq || new Uint8Array(analyser.frequencyBinCount); analyser.getByteFrequencyData(freq); }
+    const bw = W / N;
+    for (let i = 0; i < N; i++) {
+      const v = freq && !audio.paused ? freq[Math.floor(Math.pow(i / N, 1.6) * (freq.length * 0.85))] / 255 : 0;
+      const h = Math.max(4 * dpr, v * H * 0.6);
+      g.fillStyle = `rgba(255, ${90 + v * 90}, 31, ${0.25 + v * 0.75})`;
+      const x = i * bw + bw * 0.18, w = bw * 0.64;
+      g.beginPath(); g.roundRect ? g.roundRect(x, H * 0.62 - h, w, h, w / 2) : g.rect(x, H * 0.62 - h, w, h); g.fill();
+    }
+  })();
+
+  /* ---------- Tela ligada / offline ---------- */
   let lock = null;
   async function setWake(on) {
-    try {
-      if (on && 'wakeLock' in navigator) { lock = await navigator.wakeLock.request('screen'); }
-      else if (lock) { await lock.release(); lock = null; }
-    } catch { if (on) toast('Seu celular não permitiu manter a tela ligada'); }
+    try { if (on && 'wakeLock' in navigator) lock = await navigator.wakeLock.request('screen'); else if (lock) { await lock.release(); lock = null; } }
+    catch { if (on) toast('O celular não deixou manter a tela ligada'); }
   }
   $('wake').checked = store.get('wake', false);
   $('wake').addEventListener('change', e => { store.set('wake', e.target.checked); setWake(e.target.checked); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && $('wake').checked) setWake(true); });
   if ($('wake').checked) setWake(true);
-
-  /* ---------- Instalação / offline ---------- */
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
 </script>

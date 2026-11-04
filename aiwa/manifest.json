@@ -1,7 +1,7 @@
 {
-  "name": "Boombox TH",
-  "short_name": "Boombox",
-  "description": "Player com equalizador e controle de conexão para a caixa Aiwa Boombox.",
+  "name": "Aiwa dos Guri",
+  "short_name": "Aiwa dos Guri",
+  "description": "Controle da caixa Aiwa: equalizador, BOOST, luzes, efeitos de DJ, vinhetas e player.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
