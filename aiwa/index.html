@@ -75,7 +75,11 @@
 
   /* Hero da caixa */
   .hero { position: relative; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); background: radial-gradient(120% 100% at 50% 110%, #2a1a12 0%, var(--panel) 65%); padding: 20px 18px 18px; margin-top: 6px; }
-  .boombox { display: block; width: 100%; max-width: 360px; height: auto; margin: 0 auto; }
+  .spk-photo { position: relative; aspect-ratio: 900 / 525; border-radius: 16px; overflow: hidden; background: #fff; }
+  .spk-photo img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .spk-light { position: absolute; inset: 0; background: rgb(40,140,255); opacity: 0;
+    -webkit-mask: url(img/luz.png) center / 100% 100% no-repeat; mask: url(img/luz.png) center / 100% 100% no-repeat; }
+  .spk-glow { position: absolute; inset: 0; filter: blur(10px); }
   .hero .nm { font-weight: 800; font-size: 19px; margin-top: 10px; }
   .battery { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
   .battery .cells { display: inline-flex; gap: 2px; padding: 2px; border: 1.5px solid var(--muted); border-radius: 4px; }
@@ -172,44 +176,11 @@
   <!-- ===================== CAIXA ===================== -->
   <section class="tab active" id="tab-caixa">
     <div class="hero">
-      <svg class="boombox" viewBox="0 0 360 210" aria-hidden="true">
-        <defs>
-          <pattern id="mesh" width="5" height="5" patternUnits="userSpaceOnUse"><rect width="5" height="5" fill="#25282e"/><circle cx="2.5" cy="2.5" r="1" fill="#181a1f"/></pattern>
-          <linearGradient id="bodyShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".10"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></linearGradient>
-          <radialGradient id="capShade" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#fff" stop-opacity=".10"/><stop offset="1" stop-color="#000" stop-opacity=".4"/></radialGradient>
-          <filter id="ledBlur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter>
-          <filter id="floorBlur" x="-50%" y="-200%" width="200%" height="500%"><feGaussianBlur stdDeviation="10"/></filter>
-        </defs>
-        <ellipse class="ledFloor" cx="180" cy="198" rx="150" ry="8" filter="url(#floorBlur)"/>
-        <path d="M104 74 C104 18, 256 18, 256 74" fill="none" stroke="#14161a" stroke-width="24" stroke-linecap="round"/>
-        <path d="M112 70 C114 30, 246 30, 248 70" fill="none" stroke="#2b2f36" stroke-width="3"/>
-        <path d="M122 50 C135 26, 225 26, 238 50" fill="none" stroke="#c8322a" stroke-width="2" stroke-dasharray="5 4" opacity=".8"/>
-        <path class="ledHandle" d="M150 31 C165 27, 195 27, 210 31" fill="none" stroke-width="3" stroke-linecap="round"/>
-        <rect x="44" y="64" width="272" height="128" rx="58" fill="url(#mesh)"/>
-        <rect x="44" y="64" width="272" height="128" rx="58" fill="url(#bodyShade)"/>
-        <rect x="146" y="72" width="68" height="12" rx="6" fill="#101216"/>
-        <g fill="#8b9099"><circle cx="157" cy="78" r="1.6"/><circle cx="168" cy="78" r="1.6"/><circle cx="180" cy="78" r="2.2" fill="#e8eaee"/><circle cx="192" cy="78" r="1.6"/><circle cx="203" cy="78" r="1.6"/></g>
-        
-        <g transform="translate(52,128)">
-          <ellipse rx="40" ry="66" fill="#121418"/>
-          <ellipse rx="40" ry="66" fill="url(#capShade)"/>
-          <ellipse class="ledGlow" rx="27" ry="50" fill="none" stroke-width="16" filter="url(#ledBlur)"/>
-          <ellipse class="ledRing" rx="25" ry="46" fill="none" stroke-width="4"/>
-          <ellipse class="ledRing2" rx="31" ry="56" fill="none" stroke-width="1.5"/>
-          <ellipse rx="20" ry="38" fill="#0a0b0e"/>
-          <path class="ledBolt" d="M3 -15 L-8 3 H-1 L-4 15 L8 -3 H1 Z" transform="scale(-1,1)"/>
-        </g>
-        
-        <g transform="translate(308,128)">
-          <ellipse rx="40" ry="66" fill="#121418"/>
-          <ellipse rx="40" ry="66" fill="url(#capShade)"/>
-          <ellipse class="ledGlow" rx="27" ry="50" fill="none" stroke-width="16" filter="url(#ledBlur)"/>
-          <ellipse class="ledRing" rx="25" ry="46" fill="none" stroke-width="4"/>
-          <ellipse class="ledRing2" rx="31" ry="56" fill="none" stroke-width="1.5"/>
-          <ellipse rx="20" ry="38" fill="#0a0b0e"/>
-          <path class="ledBolt" d="M3 -15 L-8 3 H-1 L-4 15 L8 -3 H1 Z" transform="scale(1,1)"/>
-        </g>
-      </svg>
+      <div class="spk-photo" aria-hidden="true">
+        <img src="img/caixa.jpg" alt="" width="900" height="525">
+        <div class="spk-glow"><div class="spk-light"></div></div>
+        <div class="spk-light"></div>
+      </div>
       <div class="row">
         <div style="min-width:0">
           <div class="nm" id="devName">Nenhuma caixa</div>
@@ -441,7 +412,7 @@
 <audio id="audio" preload="metadata"></audio>
 
 <script>
-const APP_VERSION = '8';
+const APP_VERSION = '10';
 window.__errs = [];
 window.addEventListener('error', e => window.__errs.push(e.message));
 (() => {
@@ -1053,13 +1024,11 @@ window.addEventListener('error', e => window.__errs.push(e.message));
 
 
   /* ---------- Luzes do desenho da caixa (imitam a caixa de verdade) ---------- */
-  const ledEls = {
-    glow: document.querySelectorAll('.boombox .ledGlow'), ring: document.querySelectorAll('.boombox .ledRing'),
-    ring2: document.querySelectorAll('.boombox .ledRing2'), bolt: document.querySelectorAll('.boombox .ledBolt'),
-    floor: document.querySelector('.boombox .ledFloor'), handle: document.querySelector('.boombox .ledHandle')
-  };
+  const ledEls = { lights: document.querySelectorAll('.spk-photo .spk-light') };
   let ledLevel = 0, ledColorStart = performance.now(), ledBuf;
   let ledSource = () => null;   // o player liga isso quando estiver pronto
+  // Tons usados só no desenho: mais claros, para parecer luz acesa na tela
+  const SHOW = { '0,255,0': '40,255,120', '255,255,0': '255,230,40', '255,0,0': '255,50,60', '156,0,255': '180,90,255', '0,0,255': '40,140,255' };
   (function ledLoop(now) {
     requestAnimationFrame(ledLoop);
     if (document.hidden || !$('tab-caixa').classList.contains('active')) return;
@@ -1069,8 +1038,8 @@ window.addEventListener('error', e => window.__errs.push(e.message));
     // Troca de cor entre as cores ligadas, com transição suave
     const per = 1600, t = (now - ledColorStart) / per;
     const ci = Math.floor(t) % Math.max(1, on.length), f = t % 1;
-    const c1 = (on[ci] || { rgb: '90,90,90' }).rgb.split(',').map(Number);
-    const c2 = (on[(ci + 1) % Math.max(1, on.length)] || { rgb: '90,90,90' }).rgb.split(',').map(Number);
+    const c1 = (on[ci] ? SHOW[on[ci].rgb] : '90,90,90').split(',').map(Number);
+    const c2 = (on[(ci + 1) % Math.max(1, on.length)] ? SHOW[on[(ci + 1) % on.length].rgb] : '90,90,90').split(',').map(Number);
     const k = f < .75 ? 0 : (f - .75) / .25;
     const rgb = c1.map((v, i) => Math.round(v + (c2[i] - v) * k)).join(',');
     // Pulsa com a batida: usa o som do player do app; sem ele, pulsa num ritmo de festa
@@ -1090,12 +1059,10 @@ window.addEventListener('error', e => window.__errs.push(e.message));
     const inten = Math.max(.15, spk.intensity / 100);
     const a = lit ? inten * beat * (live ? 1 : .45) : 0;
     const col = lit ? `rgb(${rgb})` : '#3a3f48';
-    ledEls.glow.forEach(e => { e.setAttribute('stroke', col); e.style.opacity = a * .9; });
-    ledEls.ring.forEach(e => { e.setAttribute('stroke', lit ? `rgb(${rgb})` : '#2b2f36'); e.style.opacity = lit ? .35 + .65 * a : 1; });
-    ledEls.ring2.forEach(e => { e.setAttribute('stroke', col); e.style.opacity = a * .6; });
-    ledEls.bolt.forEach(e => { e.setAttribute('fill', lit ? '#fff' : '#555b64'); e.style.opacity = lit ? .55 + .45 * a : .6; });
-    ledEls.floor.setAttribute('fill', col); ledEls.floor.style.opacity = a * .35;
-    ledEls.handle.setAttribute('stroke', col); ledEls.handle.style.opacity = a * .8;
+    ledEls.lights.forEach((e, i) => {
+      e.style.background = `rgb(${rgb})`;
+      e.style.opacity = i === 0 ? a * .7 : a;   // o primeiro é o brilho espalhado
+    });
   })(performance.now());
   function renderAll() { renderCaixa(); renderSound(); renderLights(); renderDiag(); }
   function renderDialect() { document.querySelectorAll('#dialect button').forEach(b => b.classList.toggle('on', b.dataset.v === store.get('dialect', 'auto'))); }
